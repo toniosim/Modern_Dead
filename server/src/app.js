@@ -7,6 +7,7 @@ const morgan = require('morgan');
 const compression = require('compression');
 const http = require('http');
 const socketio = require('socket.io');
+const testRoutes = require('./routes/test.routes');
 
 // Import database connection
 const connectDB = require('./config/database');
@@ -42,6 +43,7 @@ connectDB();
 app.get('/', (req, res) => {
   res.json({ message: 'Welcome to Modern Dead API' });
 });
+app.use('/api/test', testRoutes);
 
 // Socket.io connection handling
 io.on('connection', (socket) => {

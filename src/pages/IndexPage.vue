@@ -1,11 +1,19 @@
 <template>
   <q-page class="row items-center justify-evenly">
-    <example-component
-      title="Example component"
-      active
-      :todos="todos"
-      :meta="meta"
-    ></example-component>
+    <!-- Backend Connection Test Component -->
+    <div class="col-12 col-md-6 q-pa-md">
+      <connection-test />
+    </div>
+
+    <!-- Example Component (keep the original component) -->
+    <div class="col-12 col-md-6">
+      <example-component
+        title="Example component"
+        active
+        :todos="todos"
+        :meta="meta"
+      ></example-component>
+    </div>
   </q-page>
 </template>
 
@@ -13,6 +21,7 @@
 import { ref } from 'vue';
 import type { Todo, Meta } from 'components/models';
 import ExampleComponent from 'components/ExampleComponent.vue';
+import ConnectionTest from 'components/ConnectionTest.vue';
 
 const todos = ref<Todo[]>([
   {

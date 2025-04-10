@@ -1,5 +1,5 @@
 import { defineBoot } from '#q-app/wrappers';
-import axios, { type AxiosInstance } from 'axios';
+import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse, type AxiosError } from 'axios';
 
 declare module 'vue' {
   interface ComponentCustomProperties {
@@ -20,11 +20,10 @@ const api = axios.create({
 // Request interceptor for API calls
 api.interceptors.request.use(
   (config) => {
-    // You can add auth token here when implementing authentication
-    // const token = localStorage.getItem('auth_token');
-    // if (token) {
-    //   config.headers.Authorization = `Bearer ${token}`;
-    // }
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
   (error) => {
@@ -37,8 +36,48 @@ api.interceptors.response.use(
   (response) => {
     return response;
   },
-  (error) => {
-    // You can handle errors globally here (e.g., 401 Unauthorized)
+  async (error: AxiosError) => {
+    const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean };
+
+    // If the error is due to an expired token (401) and we haven't already retried
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      try {
+        // Attempt to refresh the token
+        const refreshToken = localStorage.getItem('refreshToken');
+        if (!refreshToken) {
+          // No refresh token available, redirect to login
+          localStorage.clear();
+          window.location.href = '/#/login';
+          return Promise.reject(error);
+        }
+
+        // Call the refresh token endpoint
+        const response = await axios.post('http://localhost:3000/api/auth/refresh-token', {
+          refreshToken
+        });
+
+        // If successful, update the token and retry the original request
+        const { token } = response.data;
+        localStorage.setItem('token', token);
+
+        // Update the authorization header
+        if (originalRequest.headers) {
+          originalRequest.headers.Authorization = `Bearer ${token}`;
+        } else {
+          originalRequest.headers = { Authorization: `Bearer ${token}` };
+        }
+
+        return axios(originalRequest);
+      } catch (refreshError) {
+        // If refresh fails, clear tokens and redirect to login
+        localStorage.clear();
+        window.location.href = '/#/login';
+        return Promise.reject(refreshError);
+      }
+    }
+
     return Promise.reject(error);
   }
 );

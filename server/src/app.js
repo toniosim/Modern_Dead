@@ -7,7 +7,11 @@ const morgan = require('morgan');
 const compression = require('compression');
 const http = require('http');
 const socketio = require('socket.io');
+const jwt = require('jsonwebtoken');
 const testRoutes = require('./routes/test.routes');
+const authRoutes = require('./routes/auth.routes');
+const { errorHandler } = require('./middleware/error.middleware');
+const { checkJwtConfig } = require('./middleware/jwt-config.middleware');
 
 // Import database connection
 const connectDB = require('./config/database');
@@ -36,14 +40,20 @@ app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Check JWT configuration for auth routes
+app.use('/api/auth', checkJwtConfig);
+
 // Connect to MongoDB
 connectDB();
 
-// Basic route for testing
+// Routes
 app.get('/', (req, res) => {
   res.json({ message: 'Welcome to Modern Dead API' });
 });
+
+// API routes
 app.use('/api/test', testRoutes);
+app.use('/api/auth', authRoutes);
 
 // Socket.io connection handling
 io.on('connection', (socket) => {
@@ -74,6 +84,12 @@ io.on('connection', (socket) => {
 
   // Game-specific events
   socket.on('join_location', (data) => {
+    // Check if user is authenticated
+    if (!socket.userId) {
+      socket.emit('error', { message: 'Not authenticated' });
+      return;
+    }
+
     // Remove from previous location room if any
     if (socket.currentLocation) {
       socket.leave(`location:${socket.currentLocation}`);
@@ -92,6 +108,12 @@ io.on('connection', (socket) => {
 
   // Handle player actions
   socket.on('player_action', (data) => {
+    // Check if user is authenticated
+    if (!socket.userId) {
+      socket.emit('error', { message: 'Not authenticated' });
+      return;
+    }
+
     console.log(`Player action from ${socket.username}:`, data.action);
 
     // Process the action (you'll implement this later)
@@ -143,6 +165,12 @@ io.on('connection', (socket) => {
 
   // Handle player movement
   socket.on('move', (data) => {
+    // Validate user is authenticated
+    if (!socket.userId) {
+      socket.emit('error', { message: 'Not authenticated' });
+      return;
+    }
+
     // Handle player movement logic (will be implemented later)
     // ...
 
@@ -160,6 +188,16 @@ io.on('connection', (socket) => {
     });
   });
 
+  // Handle test events
+  socket.on('test_event', (data) => {
+    console.log('Received test event:', data);
+    socket.emit('test_response', {
+      message: 'Test message received',
+      timestamp: new Date().toISOString(),
+      received: data
+    });
+  });
+
   // Handle disconnection
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
@@ -174,13 +212,7 @@ io.on('connection', (socket) => {
 });
 
 // Global error handler
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({
-    message: 'Internal Server Error',
-    ...(process.env.NODE_ENV === 'development' && { error: err.message })
-  });
-});
+app.use(errorHandler);
 
 // Start server
 const PORT = process.env.PORT || 3000;

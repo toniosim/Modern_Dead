@@ -5,6 +5,11 @@
       <connection-test />
     </div>
 
+    <!-- Socket.io Test Component -->
+    <div class="col-12 col-md-6 q-pa-md">
+      <socket-test />
+    </div>
+
     <!-- Example Component (keep the original component) -->
     <div class="col-12 col-md-6">
       <example-component
@@ -22,6 +27,7 @@ import { ref } from 'vue';
 import type { Todo, Meta } from 'components/models';
 import ExampleComponent from 'components/ExampleComponent.vue';
 import ConnectionTest from 'components/ConnectionTest.vue';
+import SocketTest from 'components/SocketTest.vue';
 
 const todos = ref<Todo[]>([
   {

@@ -52,7 +52,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { useUserStore } from 'src/stores/user-store';
+import { useUserStore } from 'stores/user-store';
 
 const router = useRouter();
 const userStore = useUserStore();

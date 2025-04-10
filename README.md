@@ -1,6 +1,8 @@
 # Modern Dead (modern-dead)
 
-A modern remake of the Urban Dead PBBG
+A modern remake of the Urban Dead PBBG as a lil pet project to learn how to use Quasar Framework
+
+Built using the help of Claude AI
 
 ## Install the dependencies
 ```bash

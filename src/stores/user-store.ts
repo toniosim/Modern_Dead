@@ -2,14 +2,67 @@ import { defineStore } from 'pinia';
 import { api } from 'src/boot/axios';
 import { ref, computed } from 'vue';
 
+// Helper function to safely get items from localStorage
+const getStorageItem = (key: string): string | null => {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return null;
+  }
+
+  try {
+    return localStorage.getItem(key);
+  } catch (e) {
+    console.error(`Error accessing localStorage for key: ${key}`, e);
+    return null;
+  }
+};
+
+// Helper function to safely set items in localStorage
+const setStorageItem = (key: string, value: string): void => {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return;
+  }
+
+  try {
+    localStorage.setItem(key, value);
+  } catch (e) {
+    console.error(`Error setting localStorage for key: ${key}`, e);
+  }
+};
+
+// Helper function to safely remove items from localStorage
+const removeStorageItem = (key: string): void => {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return;
+  }
+
+  try {
+    localStorage.removeItem(key);
+  } catch (e) {
+    console.error(`Error removing localStorage for key: ${key}`, e);
+  }
+};
+
 export const useUserStore = defineStore('user', () => {
-  // State
-  const token = ref<string | null>(localStorage.getItem('token'));
-  const refreshToken = ref<string | null>(localStorage.getItem('refreshToken'));
-  const userId = ref<string | null>(localStorage.getItem('userId'));
-  const username = ref<string | null>(localStorage.getItem('username'));
+  // State with default initialization to prevent null reference errors
+  const token = ref<string | null>(null);
+  const refreshToken = ref<string | null>(null);
+  const userId = ref<string | null>(null);
+  const username = ref<string | null>(null);
   const isLoading = ref(false);
   const error = ref<string | null>(null);
+
+  // Initialize from localStorage (safely)
+  const initializeFromStorage = (): void => {
+    token.value = getStorageItem('token');
+    refreshToken.value = getStorageItem('refreshToken');
+    userId.value = getStorageItem('userId');
+    username.value = getStorageItem('username');
+  };
+
+  // Initial load (only if in browser)
+  if (typeof window !== 'undefined') {
+    initializeFromStorage();
+  }
 
   // Getters
   const isAuthenticated = computed(() => !!token.value);
@@ -42,22 +95,28 @@ export const useUserStore = defineStore('user', () => {
     error.value = null;
     try {
       const response = await api.post('/auth/login', credentials);
+      const { token: newToken, refreshToken: newRefreshToken, userId: newUserId, username: newUsername } = response.data;
 
-      // Save auth data
-      token.value = response.data.token;
-      refreshToken.value = response.data.refreshToken;
-      userId.value = response.data.userId;
-      username.value = response.data.username;
+      // Validate response data to prevent null assignments
+      if (!newToken || !newRefreshToken || !newUserId || !newUsername) {
+        throw new Error('Invalid response from server: missing authentication data');
+      }
 
-      // Store in localStorage
-      localStorage.setItem('token', token.value);
-      localStorage.setItem('refreshToken', refreshToken.value);
-      localStorage.setItem('userId', userId.value);
-      localStorage.setItem('username', username.value);
+      // Save auth data to store
+      token.value = newToken;
+      refreshToken.value = newRefreshToken;
+      userId.value = newUserId;
+      username.value = newUsername;
+
+      // Store in localStorage (safely)
+      setStorageItem('token', newToken);
+      setStorageItem('refreshToken', newRefreshToken);
+      setStorageItem('userId', newUserId);
+      setStorageItem('username', newUsername);
 
       return response.data;
     } catch (err: any) {
-      error.value = err.response?.data?.message || 'Login failed';
+      error.value = err.response?.data?.message || err.message || 'Login failed';
       throw error.value;
     } finally {
       isLoading.value = false;
@@ -78,9 +137,16 @@ export const useUserStore = defineStore('user', () => {
         refreshToken: refreshToken.value
       });
 
+      const newToken = response.data.token;
+      if (!newToken) {
+        throw new Error('Invalid response from server: missing token');
+      }
+
       // Update token
-      token.value = response.data.token;
-      localStorage.setItem('token', token.value);
+      token.value = newToken;
+
+      // Update localStorage (safely)
+      setStorageItem('token', newToken);
 
       return true;
     } catch (err) {
@@ -102,20 +168,28 @@ export const useUserStore = defineStore('user', () => {
     userId.value = null;
     username.value = null;
 
-    // Clear localStorage
-    localStorage.removeItem('token');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('userId');
-    localStorage.removeItem('username');
+    // Clear localStorage (safely)
+    removeStorageItem('token');
+    removeStorageItem('refreshToken');
+    removeStorageItem('userId');
+    removeStorageItem('username');
 
     // Notify server (fire and forget)
-    api.post('/auth/logout').catch(console.error);
+    if (typeof window !== 'undefined') {
+      api.post('/auth/logout').catch(error => {
+        console.error('Error during logout:', error);
+      });
+    }
   }
 
   /**
    * Get user profile data
    */
   async function fetchUserProfile() {
+    if (!userId.value || !token.value) {
+      throw new Error('User not authenticated');
+    }
+
     isLoading.value = true;
     error.value = null;
     try {

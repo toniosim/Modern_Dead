@@ -1,0 +1,292 @@
+/* Modern Dead Theme CSS - Inspired by Urban Dead */
+
+/* Main background and text colors */
+:root {
+    /* Base theme colors */
+    --md-primary: #222222;
+    --md-secondary: #444444;
+    --md-accent: #999999;
+    --md-positive: #21BA45;
+    --md-negative: #C10015;
+    --md-info: #31CCEC;
+    --md-warning: #F2C037;
+
+    /* Character class colors */
+    --md-military: #21BA45;  /* Green */
+    --md-scientist: #31CCEC; /* Blue */
+    --md-civilian: #C10015;  /* Red */
+    --md-zombie: #666666;    /* Grey */
+
+    /* Building colors */
+    --md-hospital: #ff9999;      /* Pink */
+    --md-police: #31CCEC;        /* Blue */
+    --md-fire: #C10015;          /* Red */
+    --md-necrotech: #9966CC;     /* Purple */
+    --md-street: #999999;        /* Grey */
+    --md-mall: #cc9b6d;          /* Brown */
+
+    /* Status colors */
+    --md-powered: #F2C037;       /* Yellow */
+    --md-ransacked: #C10015;     /* Red */
+    --md-barricaded: #21BA45;    /* Green */
+
+    /* Text colors */
+    --md-text: #EEEEEE;
+    --md-text-secondary: #AAAAAA;
+    --md-text-disabled: #777777;
+
+    /* Background colors */
+    --md-background: #1a1a1a;
+    --md-card-background: #2a2a2a;
+    --md-dark-building: #111111;
+}
+
+/* Apply to Quasar components */
+.q-header {
+    background-color: var(--md-primary) !important;
+}
+
+.q-drawer {
+    background-color: var(--md-background) !important;
+    color: var(--md-text);
+}
+
+.q-page {
+    background-color: var(--md-background);
+    color: var(--md-text);
+}
+
+.q-card {
+    background-color: var(--md-card-background);
+    color: var(--md-text);
+}
+
+.q-item {
+    color: var(--md-text);
+}
+
+.q-item-label {
+    color: var(--md-text);
+}
+
+.q-item-label.header {
+    color: var(--md-text-secondary);
+}
+
+/* Status classes */
+.powered {
+    color: var(--md-powered);
+}
+
+.ransacked {
+    color: var(--md-ransacked);
+}
+
+.barricaded {
+    color: var(--md-barricaded);
+}
+
+/* Character classes */
+.military {
+    color: var(--md-military);
+}
+
+.scientist {
+    color: var(--md-scientist);
+}
+
+.civilian {
+    color: var(--md-civilian);
+}
+
+.zombie {
+    color: var(--md-zombie);
+}
+
+/* Building types */
+.hospital {
+    color: var(--md-hospital);
+}
+
+.police {
+    color: var(--md-police);
+}
+
+.fire {
+    color: var(--md-fire);
+}
+
+.necrotech {
+    color: var(--md-necrotech);
+}
+
+.street {
+    color: var(--md-street);
+}
+
+.mall {
+    color: var(--md-mall);
+}
+
+/* Dark building style */
+.dark-building {
+    background-color: var(--md-dark-building);
+    color: var(--md-text-secondary);
+}
+
+/* Custom button styles */
+.ud-button {
+    background-color: var(--md-secondary);
+    color: var(--md-text);
+    border: 1px solid var(--md-accent);
+    border-radius: 2px;
+    padding: 8px 12px;
+    margin: 4px;
+    transition: background-color 0.2s;
+}
+
+.ud-button:hover {
+    background-color: var(--md-primary);
+}
+
+/* Inventory item styles */
+.inventory-item {
+    border: 1px solid var(--md-accent);
+    background-color: var(--md-secondary);
+    padding: 4px 8px;
+    margin: 2px;
+    border-radius: 2px;
+}
+
+.weapon {
+    border-left: 3px solid var(--md-negative);
+}
+
+.healing {
+    border-left: 3px solid var(--md-hospital);
+}
+
+.ammo {
+    border-left: 3px solid var(--md-military);
+}
+
+.tool {
+    border-left: 3px solid var(--md-info);
+}
+
+/* Status indicators */
+.hp-healthy {
+    color: var(--md-positive);
+}
+
+.hp-injured {
+    color: var(--md-warning);
+}
+
+.hp-critical {
+    color: var(--md-negative);
+}
+
+.infected {
+    color: #5C7D6D; /* Sickly green */
+}
+
+/* AP indicator */
+.ap-available {
+    color: var(--md-text);
+}
+
+.ap-low {
+    color: var(--md-warning);
+}
+
+/* Map grid styles */
+.map-grid {
+    border: 1px solid var(--md-accent);
+    background-color: var(--md-background);
+}
+
+.map-cell {
+    border: 1px solid var(--md-accent);
+    padding: 8px;
+    text-align: center;
+}
+
+.map-cell.current {
+    background-color: var(--md-secondary);
+    font-weight: bold;
+}
+
+/* Message styling */
+.message {
+    background-color: var(--md-card-background);
+    border-left: 3px solid var(--md-accent);
+    padding: 8px 12px;
+    margin-bottom: 8px;
+}
+
+.message.radio {
+    border-left: 3px solid var(--md-info);
+}
+
+.message.graffiti {
+    border-left: 3px solid var(--md-warning);
+    font-style: italic;
+}
+
+.message.zombie {
+    border-left: 3px solid var(--md-zombie);
+    font-style: italic;
+}
+
+/* Dark mode overrides for Quasar components */
+.body--dark {
+    --q-primary: var(--md-primary);
+    --q-secondary: var(--md-secondary);
+    --q-accent: var(--md-accent);
+    --q-positive: var(--md-positive);
+    --q-negative: var(--md-negative);
+    --q-info: var(--md-info);
+    --q-warning: var(--md-warning);
+    --q-dark: var(--md-background);
+    --q-dark-page: var(--md-background);
+}
+
+.body--dark .q-item {
+    color: var(--md-text);
+}
+
+.body--dark .q-field__label {
+    color: var(--md-text-secondary);
+}
+
+.body--dark .q-field__native,
+.body--dark .q-field__input {
+    color: var(--md-text);
+}
+
+.body--dark .q-field__control {
+    background: var(--md-secondary);
+}
+
+.body--dark .q-menu {
+    background: var(--md-card-background);
+}
+
+.body--dark .q-table {
+    background-color: var(--md-card-background);
+    color: var(--md-text);
+}
+
+.body--dark .q-table th {
+    color: var(--md-text-secondary);
+}
+
+.body--dark .q-table thead tr,
+.body--dark .q-table tbody td {
+    border-color: var(--md-secondary);
+}
+
+.body--dark .q-separator {
+    background: var(--md-secondary);
+}

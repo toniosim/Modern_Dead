@@ -1,1 +1,119 @@
 /* app global css */
+
+/* Import Modern Dead Theme */
+@import './theme.css';
+
+/* Additional global styles */
+body {
+    font-family: 'Courier New', Courier, monospace;
+    background-color: var(--md-background);
+    color: var(--md-text);
+}
+
+/* Make the UI feel more like the original text-based game */
+.q-btn {
+    border-radius: 3px;
+}
+
+.q-card {
+    border: 1px solid var(--md-accent);
+    border-radius: 3px;
+}
+
+/* Style links to look like the original game */
+a:not(.q-btn) {
+    color: #a0a0a0;
+    text-decoration: none;
+}
+
+a:not(.q-btn):hover {
+    color: var(--md-text);
+    text-decoration: underline;
+}
+
+/* Make form elements consistent with the theme */
+.q-field__control {
+    background-color: var(--md-primary) !important;
+    color: var(--md-text) !important;
+}
+
+.q-field__native, .q-field__input {
+    color: var(--md-text) !important;
+}
+
+/* Custom action button styling */
+.action-btn {
+    font-family: 'Courier New', Courier, monospace;
+    border: 1px solid var(--md-accent);
+    background-color: var(--md-primary);
+    color: var(--md-text);
+    margin: 3px;
+    padding: 5px 10px;
+    border-radius: 2px;
+}
+
+.action-btn:hover {
+    background-color: var(--md-secondary);
+}
+
+/* Custom styling for connections test panels to match theme */
+.connection-test, .socket-test {
+    border: 1px solid var(--md-accent);
+    background-color: var(--md-card-background);
+}
+
+.event-item {
+    border-bottom: 1px solid var(--md-secondary);
+}
+
+/* Style for auth forms */
+.auth-card {
+    border: 2px solid var(--md-accent);
+    background-color: var(--md-card-background);
+}
+
+/* Character status indicators */
+.character-status {
+    padding: 5px;
+    margin: 5px 0;
+    border-left: 3px solid var(--md-accent);
+}
+
+.status-hp {
+    border-left-color: var(--md-negative);
+}
+
+.status-ap {
+    border-left-color: var(--md-info);
+}
+
+.status-infection {
+    border-left-color: #5C7D6D; /* Sickly green */
+}
+
+/* Monospaced text for game messages */
+.game-message {
+    font-family: 'Courier New', Courier, monospace;
+    white-space: pre-wrap;
+    padding: 8px;
+    margin: 8px 0;
+    background-color: var(--md-secondary);
+    border-left: 3px solid var(--md-accent);
+}
+
+/* Error and notification messages */
+.error-message {
+    background-color: rgba(193, 0, 21, 0.2);
+    color: var(--md-text);
+    border-left: 3px solid var(--md-negative);
+    padding: 8px 12px;
+    margin: 8px 0;
+}
+
+.success-message {
+    background-color: rgba(33, 186, 69, 0.2);
+    color: var(--md-text);
+    border-left: 3px solid var(--md-positive);
+    padding: 8px 12px;
+    margin: 8px 0;
+}

@@ -11,12 +11,12 @@
           @click="toggleLeftDrawer"
         />
 
-        <q-toolbar-title>
+        <q-toolbar-title class="text-bold">
           Modern Dead
         </q-toolbar-title>
 
         <div v-if="userStore.isAuthenticated" class="q-mr-md">
-          Welcome, {{ userStore.getUsername }}
+          Welcome, <span :class="userClass">{{ userStore.getUsername }}</span>
         </div>
 
         <!-- Auth buttons -->
@@ -38,7 +38,7 @@
           </q-menu>
         </q-btn>
 
-        <q-btn v-else to="/login" flat label="Login" />
+        <q-btn v-else to="/login" flat label="Login" class="ud-button" />
       </q-toolbar>
     </q-header>
 
@@ -46,7 +46,13 @@
       v-model="leftDrawerOpen"
       show-if-above
       bordered
+      class="ud-drawer"
     >
+      <div class="q-pa-md">
+        <div class="text-h6 q-mb-md">Modern Dead</div>
+        <div class="text-caption q-mb-lg">A modern remake of Urban Dead</div>
+      </div>
+
       <q-list>
         <q-item-label header>
           Navigation
@@ -57,6 +63,20 @@
             <q-icon name="home" />
           </q-item-section>
           <q-item-section>Home</q-item-section>
+        </q-item>
+
+        <q-item v-if="userStore.isAuthenticated" clickable to="/game">
+          <q-item-section avatar>
+            <q-icon name="videogame_asset" />
+          </q-item-section>
+          <q-item-section>Play Game</q-item-section>
+        </q-item>
+
+        <q-item v-if="userStore.isAuthenticated" clickable to="/map">
+          <q-item-section avatar>
+            <q-icon name="map" />
+          </q-item-section>
+          <q-item-section>Map</q-item-section>
         </q-item>
 
         <q-item v-if="userStore.isAuthenticated" clickable to="/profile">
@@ -87,18 +107,89 @@
           <q-item-section>Logout</q-item-section>
         </q-item>
 
-        <q-separator />
+        <q-separator class="q-my-md" />
 
-        <!-- Keep the original links section -->
+        <!-- Game Info Section -->
         <q-item-label header>
-          Essential Links
+          Game Info
         </q-item-label>
 
-        <EssentialLink
-          v-for="link in linksList"
-          :key="link.title"
-          v-bind="link"
-        />
+        <q-item clickable to="/skills">
+          <q-item-section avatar>
+            <q-icon name="psychology" />
+          </q-item-section>
+          <q-item-section>Skills</q-item-section>
+        </q-item>
+
+        <q-item clickable to="/buildings">
+          <q-item-section avatar>
+            <q-icon name="apartment" />
+          </q-item-section>
+          <q-item-section>Buildings</q-item-section>
+        </q-item>
+
+        <q-item clickable to="/classes">
+          <q-item-section avatar>
+            <q-icon name="groups" />
+          </q-item-section>
+          <q-item-section>Character Classes</q-item-section>
+        </q-item>
+
+        <q-separator class="q-my-md" />
+
+        <!-- Stats Section -->
+        <q-item-label header>
+          Game Stats
+        </q-item-label>
+
+        <q-item v-if="userStore.isAuthenticated">
+          <q-item-section>
+            <div class="text-subtitle2">Character Stats</div>
+            <div class="flex justify-between">
+              <span>HP:</span>
+              <span class="hp-healthy">50/50</span>
+            </div>
+            <div class="flex justify-between">
+              <span>AP:</span>
+              <span class="ap-available">42/50</span>
+            </div>
+            <div class="flex justify-between">
+              <span>XP:</span>
+              <span>325</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Level:</span>
+              <span>8</span>
+            </div>
+          </q-item-section>
+        </q-item>
+
+        <q-separator class="q-my-md" />
+
+        <!-- About Links Section -->
+        <q-item-label header>
+          About
+        </q-item-label>
+
+        <q-item clickable tag="a" href="https://wiki.urbandead.com/" target="_blank">
+          <q-item-section avatar>
+            <q-icon name="insert_drive_file" />
+          </q-item-section>
+          <q-item-section>
+            <q-item-label>Urban Dead Wiki</q-item-label>
+            <q-item-label caption>Learn about the original game</q-item-label>
+          </q-item-section>
+        </q-item>
+
+        <q-item clickable tag="a" href="https://github.com/quasarframework" target="_blank">
+          <q-item-section avatar>
+            <q-icon name="code" />
+          </q-item-section>
+          <q-item-section>
+            <q-item-label>Quasar Framework</q-item-label>
+            <q-item-label caption>github.com/quasarframework</q-item-label>
+          </q-item-section>
+        </q-item>
       </q-list>
     </q-drawer>
 
@@ -111,58 +202,15 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import EssentialLink, { type EssentialLinkProps } from 'components/EssentialLink.vue';
 import { useUserStore } from 'src/stores/user-store';
 
 const router = useRouter();
 const userStore = useUserStore();
 
-const linksList: EssentialLinkProps[] = [
-  {
-    title: 'Docs',
-    caption: 'quasar.dev',
-    icon: 'school',
-    link: 'https://quasar.dev'
-  },
-  {
-    title: 'Github',
-    caption: 'github.com/quasarframework',
-    icon: 'code',
-    link: 'https://github.com/quasarframework'
-  },
-  {
-    title: 'Discord Chat Channel',
-    caption: 'chat.quasar.dev',
-    icon: 'chat',
-    link: 'https://chat.quasar.dev'
-  },
-  {
-    title: 'Forum',
-    caption: 'forum.quasar.dev',
-    icon: 'record_voice_over',
-    link: 'https://forum.quasar.dev'
-  },
-  {
-    title: 'Twitter',
-    caption: '@quasarframework',
-    icon: 'rss_feed',
-    link: 'https://twitter.quasar.dev'
-  },
-  {
-    title: 'Facebook',
-    caption: '@QuasarFramework',
-    icon: 'public',
-    link: 'https://facebook.quasar.dev'
-  },
-  {
-    title: 'Quasar Awesome',
-    caption: 'Community Quasar projects',
-    icon: 'favorite',
-    link: 'https://awesome.quasar.dev'
-  }
-];
-
 const leftDrawerOpen = ref(false);
+
+// Determine the user's class for styling
+const userClass = ref('civilian'); // Default to civilian
 
 function toggleLeftDrawer() {
   leftDrawerOpen.value = !leftDrawerOpen.value;
@@ -173,3 +221,9 @@ function logout() {
   router.push('/login');
 }
 </script>
+
+<style scoped>
+.ud-drawer {
+  background-color: var(--md-card-background);
+}
+</style>

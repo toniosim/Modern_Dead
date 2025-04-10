@@ -1,17 +1,26 @@
 <template>
   <q-page class="row items-center justify-evenly">
-    <!-- Backend Connection Test Component -->
-    <div class="col-12 col-md-6 q-pa-md">
-      <connection-test />
+    <!-- Game UI Demo Component -->
+    <div class="col-12 col-lg-8 q-mb-lg">
+      <game-ui-demo />
     </div>
 
-    <!-- Socket.io Test Component -->
-    <div class="col-12 col-md-6 q-pa-md">
-      <socket-test />
+    <div class="col-12">
+      <div class="row q-col-gutter-md">
+        <!-- Backend Connection Test Component -->
+        <div class="col-12 col-md-6 q-pa-md">
+          <connection-test />
+        </div>
+
+        <!-- Socket.io Test Component -->
+        <div class="col-12 col-md-6 q-pa-md">
+          <socket-test />
+        </div>
+      </div>
     </div>
 
     <!-- Example Component (keep the original component) -->
-    <div class="col-12 col-md-6">
+    <div class="col-12 col-md-6 q-mb-md">
       <example-component
         title="Example component"
         active
@@ -28,6 +37,7 @@ import type { Todo, Meta } from 'components/models';
 import ExampleComponent from 'components/ExampleComponent.vue';
 import ConnectionTest from 'components/ConnectionTest.vue';
 import SocketTest from 'components/SocketTest.vue';
+import GameUiDemo from 'components/GameUiDemo.vue'; // Import our new component
 
 const todos = ref<Todo[]>([
   {

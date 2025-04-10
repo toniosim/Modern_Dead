@@ -5,18 +5,11 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const compression = require('compression');
-const mongoose = require('mongoose');
-const socketio = require('socket.io');
 const http = require('http');
+const socketio = require('socket.io');
 
-// Import routes
-const authRoutes = require('./routes/auth.routes');
-const userRoutes = require('./routes/user.routes');
-const gameRoutes = require('./routes/game.routes');
-const characterRoutes = require('./routes/character.routes');
-
-// Import error handler
-const { errorHandler } = require('./middleware/error.middleware');
+// Import database connection
+const connectDB = require('./config/database');
 
 // Create Express app
 const app = express();
@@ -42,10 +35,13 @@ app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Database connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/modern-dead')
-  .then(() => console.log('Connected to MongoDB'))
-  .catch(err => console.error('MongoDB connection error:', err));
+// Connect to MongoDB
+connectDB();
+
+// Basic route for testing
+app.get('/', (req, res) => {
+  res.json({ message: 'Welcome to Modern Dead API' });
+});
 
 // Socket.io connection handling
 io.on('connection', (socket) => {
@@ -55,23 +51,21 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
   });
-
-  // Add game-specific socket events here
 });
 
-// Register routes
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/game', gameRoutes);
-app.use('/api/characters', characterRoutes);
-
-// Base route
-app.get('/', (req, res) => {
-  res.json({ message: 'Welcome to Modern Dead API' });
+// Error handling for unhandled routes
+app.use((req, res) => {
+  res.status(404).json({ message: 'Route not found' });
 });
 
-// Error handling middleware
-app.use(errorHandler);
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({
+    message: 'Internal Server Error',
+    ...(process.env.NODE_ENV === 'development' && { error: err.message })
+  });
+});
 
 // Start server
 const PORT = process.env.PORT || 3000;

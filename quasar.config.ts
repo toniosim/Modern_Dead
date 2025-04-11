@@ -61,7 +61,8 @@ export default defineConfig((/* ctx */) => {
       // analyze: true,
       env: {
         API_URL: process.env.API_URL || 'http://localhost:3000/api',
-        SOCKET_URL: process.env.SOCKET_URL || 'http://localhost:3000'
+        SOCKET_URL: process.env.SOCKET_URL || 'http://localhost:3000',
+        NODE_ENV: process.env.NODE_ENV || 'development'
       },
       // rawDefine: {}
       // ignorePublicFolder: true,

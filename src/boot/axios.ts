@@ -1,5 +1,6 @@
 import { defineBoot } from '#q-app/wrappers';
 import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse, type AxiosError } from 'axios';
+import { environment } from '../config/environment';
 
 declare module 'vue' {
   interface ComponentCustomProperties {
@@ -60,7 +61,7 @@ const clearStorage = (): void => {
 
 // Create API instance with base URL pointing to your Express backend
 const api = axios.create({
-  baseURL: process.env.API_URL || 'http://localhost:3000/api',
+  baseURL: environment.apiUrl,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json'

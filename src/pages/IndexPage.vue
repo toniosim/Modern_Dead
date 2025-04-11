@@ -19,15 +19,11 @@
       </div>
     </div>
 
-    <!-- Example Component (keep the original component) -->
-    <div class="col-12 col-md-6 q-mb-md">
-      <example-component
-        title="Example component"
-        active
-        :todos="todos"
-        :meta="meta"
-      ></example-component>
+    <!-- Database Test Component -->
+    <div class="col-12 col-md-4 q-pa-md">
+      <database-test />
     </div>
+
   </q-page>
 </template>
 
@@ -37,7 +33,8 @@ import type { Todo, Meta } from 'components/models';
 import ExampleComponent from 'components/ExampleComponent.vue';
 import ConnectionTest from 'components/ConnectionTest.vue';
 import SocketTest from 'components/SocketTest.vue';
-import GameUiDemo from 'components/GameUiDemo.vue'; // Import our new component
+import GameUiDemo from 'components/GameUiDemo.vue';
+import DatabaseTest from 'components/DatabaseTest.vue';
 
 const todos = ref<Todo[]>([
   {

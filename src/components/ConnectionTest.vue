@@ -69,7 +69,6 @@ const testConnection = async () => {
 }
 
 .response-box pre {
-  background-color: #f5f5f5;
   padding: 10px;
   border-radius: 4px;
   overflow-x: auto;

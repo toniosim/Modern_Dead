@@ -39,3 +39,5 @@ logs
 # Other unnecessary files
 *.md
 *.json.gz
+
+package-lock.json

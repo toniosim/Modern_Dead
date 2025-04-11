@@ -1,10 +1,5 @@
 <template>
   <q-page class="row items-center justify-evenly">
-    <!-- Game UI Demo Component -->
-    <div class="col-12 col-lg-8 q-mb-lg">
-      <game-ui-demo />
-    </div>
-
     <div class="col-12">
       <div class="row q-col-gutter-md">
         <!-- Backend Connection Test Component -->
@@ -28,38 +23,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import type { Todo, Meta } from 'components/models';
-import ExampleComponent from 'components/ExampleComponent.vue';
-import ConnectionTest from 'components/ConnectionTest.vue';
-import SocketTest from 'components/SocketTest.vue';
-import GameUiDemo from 'components/GameUiDemo.vue';
-import DatabaseTest from 'components/DatabaseTest.vue';
-
-const todos = ref<Todo[]>([
-  {
-    id: 1,
-    content: 'ct1'
-  },
-  {
-    id: 2,
-    content: 'ct2'
-  },
-  {
-    id: 3,
-    content: 'ct3'
-  },
-  {
-    id: 4,
-    content: 'ct4'
-  },
-  {
-    id: 5,
-    content: 'ct5'
-  }
-]);
-
-const meta = ref<Meta>({
-  totalCount: 1200
-});
+  import ConnectionTest from 'components/ConnectionTest.vue';
+  import SocketTest from 'components/SocketTest.vue';
+  import DatabaseTest from 'components/DatabaseTest.vue';
 </script>

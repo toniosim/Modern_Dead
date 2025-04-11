@@ -79,6 +79,14 @@
           <q-item-section>Map</q-item-section>
         </q-item>
 
+        <q-item clickable to="/game-ui-demo">
+          <q-item-section avatar>
+            <q-icon name="gamepad" />
+          </q-item-section>
+          <q-item-section>Game UI Demo</q-item-section>
+
+        </q-item>
+
         <q-item v-if="userStore.isAuthenticated" clickable to="/profile">
           <q-item-section avatar>
             <q-icon name="account_circle" />

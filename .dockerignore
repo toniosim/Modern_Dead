@@ -1,0 +1,43 @@
+# Dependencies
+node_modules
+npm-debug.log*
+
+# Build outputs
+/dist
+/.quasar
+
+# Editor directories and files
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
+.thumbs.db
+
+# Environment files (may contain secrets)
+.env*
+.env.local*
+!.env.example
+
+# Git-related
+.git
+.gitignore
+
+# Testing artifacts
+/coverage
+/test/unit/coverage
+
+# Logs
+logs
+*.log
+
+# Server-side code (assuming you'll containerize it separately)
+/server
+
+# Other unnecessary files
+*.md
+*.json.gz
+
+package-lock.json

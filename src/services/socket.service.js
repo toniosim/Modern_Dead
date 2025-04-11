@@ -14,7 +14,7 @@ class SocketService {
   initialize() {
     if (this.socket) return;
 
-    this.socket = io('http://localhost:3000', {
+    this.socket = io(process.env.SOCKET_URL || 'http://localhost:3000', {
       autoConnect: false,
       reconnection: true,
       reconnectionAttempts: 5,

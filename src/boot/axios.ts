@@ -60,7 +60,7 @@ const clearStorage = (): void => {
 
 // Create API instance with base URL pointing to your Express backend
 const api = axios.create({
-  baseURL: 'http://localhost:3000/api',
+  baseURL: process.env.API_URL || 'http://localhost:3000/api',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json'

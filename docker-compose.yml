@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  # MongoDB service
+  mongodb:
+    image: mongo:latest
+    container_name: modern-dead-mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - modern-dead-network
+    environment:
+      - MONGO_INITDB_DATABASE=modern-dead
+
+  # Backend service
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: modern-dead-backend
+    restart: always
+    depends_on:
+      - mongodb
+    ports:
+      - "3000:3000"
+    networks:
+      - modern-dead-network
+    environment:
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://mongodb:27017/modern-dead
+      - CLIENT_URL=http://frontend:9000
+      - PORT=3000
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+
+  # Frontend service
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: modern-dead-frontend
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "9000:9000"
+    networks:
+      - modern-dead-network
+    volumes:
+      - .:/app
+      - /app/node_modules
+
+networks:
+  modern-dead-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:

@@ -12,8 +12,6 @@ services:
       - mongodb_data:/data/db
     networks:
       - modern-dead-network
-    environment:
-      - MONGO_INITDB_DATABASE=modern-dead
 
   # Backend service
   backend:
@@ -29,10 +27,12 @@ services:
     networks:
       - modern-dead-network
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
       - MONGODB_URI=mongodb://mongodb:27017/modern-dead
-      - CLIENT_URL=http://frontend:9000
+      - CLIENT_URL=http://localhost:9000
       - PORT=3000
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
     volumes:
       - ./server:/app
       - /app/node_modules
@@ -50,12 +50,12 @@ services:
       - "9000:9000"
     networks:
       - modern-dead-network
-    volumes:
-      - .:/app
-      - /app/node_modules
     environment:
       - API_URL=http://backend:3000/api
       - SOCKET_URL=http://backend:3000
+    volumes:
+      - .:/app
+      - /app/node_modules
 
 networks:
   modern-dead-network:

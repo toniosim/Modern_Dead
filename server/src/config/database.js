@@ -10,7 +10,8 @@ const options = {
 // Connect to MongoDB
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/modern-dead', options);
+    console.log('Connecting to MongoDB at:', process.env.MONGODB_URI);
+    const conn = await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/modern-dead');
     console.log(`MongoDB Connected: ${conn.connection.host}`);
 
     // Set up event listeners for connection

@@ -1,5 +1,6 @@
 // src/services/socket.service.js
 import { io } from 'socket.io-client';
+import { environment } from 'src/config/environment';
 import { useUserStore } from 'src/stores/user-store';
 
 class SocketService {
@@ -14,7 +15,7 @@ class SocketService {
   initialize() {
     if (this.socket) return;
 
-    this.socket = io(process.env.SOCKET_URL || 'http://localhost:3000', {
+    this.socket = io(environment.socketUrl, {
       autoConnect: false,
       reconnection: true,
       reconnectionAttempts: 5,

@@ -52,6 +52,10 @@ app.get('/', (req, res) => {
   res.json({ message: 'Welcome to Modern Dead API' });
 });
 
+// Character routes
+const characterRoutes = require('./routes/character.routes');
+app.use('/api/characters', characterRoutes);
+
 // API routes
 app.use('/api/test', testRoutes);
 app.use('/api/auth', authRoutes);

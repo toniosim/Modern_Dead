@@ -34,6 +34,7 @@ const routes: RouteRecordRaw[] = [
     ],
     meta: { guest: true }
   },
+
   {
     path:'/game-ui-demo',
     component: () => import('layouts/MainLayout.vue'),
@@ -41,7 +42,29 @@ const routes: RouteRecordRaw[] = [
       { path: '', component: () => import('pages/GameUIDemoPage.vue') }
       ],
     meta: {requiresAuth: true }
-},
+  },
+
+  {
+    path: '/characters',
+    component: () => import('layouts/MainLayout.vue'),
+    children: [
+      {
+        path: '',
+        component: () => import('pages/CharacterListPage.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'create',
+        component: () => import('pages/CharacterCreationPage.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
+        path: ':id',
+        component: () => import('pages/CharacterDetailPage.vue'),
+        meta: { requiresAuth: true }
+      }
+    ]
+  },
 
   // Always leave this as last one,
   // but you can also remove it

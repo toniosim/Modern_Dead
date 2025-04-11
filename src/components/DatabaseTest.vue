@@ -61,9 +61,18 @@
 import { ref } from 'vue';
 import axios from 'axios';
 
+// Define interface for the database response
+interface DatabaseConnectionResponse {
+  connected: boolean;
+  databaseName?: string;
+  version?: string;
+  collections?: string[];
+  message?: string;
+}
+
 const API_URL = process.env.API_URL || 'http://localhost:3000/api';
 const loading = ref(false);
-const response = ref(null);
+const response = ref<DatabaseConnectionResponse | null>(null);
 const error = ref('');
 
 const testDatabaseConnection = async () => {

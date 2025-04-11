@@ -53,6 +53,9 @@ services:
     volumes:
       - .:/app
       - /app/node_modules
+    environment:
+      - API_URL=http://backend:3000/api
+      - SOCKET_URL=http://backend:3000
 
 networks:
   modern-dead-network:

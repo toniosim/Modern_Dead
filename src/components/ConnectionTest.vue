@@ -39,7 +39,7 @@
 import { ref } from 'vue';
 import axios from 'axios';
 
-const API_URL = 'http://localhost:3000/api';
+const API_URL =  process.env.API_URL || 'http://localhost:3000/api';
 const loading = ref(false);
 const response = ref(null);
 const error = ref('');

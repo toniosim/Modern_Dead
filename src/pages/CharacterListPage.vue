@@ -226,7 +226,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { useCharacterStore, type Character } from 'src/stores/character-store';
+import {useCharacterStore, type Character, ClassGroup} from 'src/stores/character-store';
 
 const router = useRouter();
 const characterStore = useCharacterStore();
@@ -249,7 +249,14 @@ const canCreateCharacter = computed(() => characterStore.characters.length < 3);
 // Helper methods
 const getClassName = (character: Character) => {
   if (character.classGroup && character.subClass) {
-    return characterStore.classDefinitions[character.classGroup][character.subClass].name;
+    const classGroup = character.classGroup as ClassGroup;
+    if (classGroup in characterStore.classDefinitions) {
+      const subClassDef = characterStore.classDefinitions[classGroup];
+      if (character.subClass in subClassDef) {
+        const classInfo = subClassDef[character.subClass];
+        return classInfo?.name || 'Unknown Class';
+      }
+    }
   }
   return 'Unknown Class';
 };

@@ -235,7 +235,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useCharacterStore, type Character } from 'src/stores/character-store';
+import { useCharacterStore, type Character, type ClassGroup } from 'src/stores/character-store';
 
 const route = useRoute();
 const router = useRouter();
@@ -256,7 +256,7 @@ const characterId = computed(() => route.params.id as string);
 const character = computed(() => characterStore.getActiveCharacter);
 
 // Skill descriptions (for a real app, this would come from the backend)
-const skillDescriptions = {
+const skillDescriptions: Record<string, string> = {
   'Basic Firearms Training': '+25% to hit with firearms attacks',
   'Free Running': 'Move between adjacent buildings without going outside',
   'First Aid': 'Heal with First Aid Kits (heals additional 5 HP)',
@@ -271,7 +271,14 @@ const skillDescriptions = {
 // Helper methods
 const getClassName = (character: Character) => {
   if (character.classGroup && character.subClass) {
-    return characterStore.classDefinitions[character.classGroup][character.subClass].name;
+    const classGroup = character.classGroup as ClassGroup;
+    if (classGroup in characterStore.classDefinitions) {
+      const subClassDef = characterStore.classDefinitions[classGroup];
+      if (character.subClass in subClassDef) {
+        const classInfo = subClassDef[character.subClass];
+        return classInfo?.name || 'Unknown Class';
+      }
+    }
   }
   return 'Unknown Class';
 };

@@ -46,19 +46,19 @@
               <div v-if="classGroup && subClass" class="q-mt-lg">
                 <q-card bordered flat class="selected-class-preview">
                   <q-card-section>
-                    <div class="text-h6">{{ selectedClass.name }}</div>
-                    <div class="text-subtitle2 q-mb-md">{{ selectedClass.description }}</div>
+                    <div class="text-h6">{{ selectedClass?.name }}</div>
+                    <div class="text-subtitle2 q-mb-md">{{ selectedClass?.description }}</div>
 
                     <div class="text-weight-bold">Starting Skills:</div>
                     <ul>
-                      <li v-for="skill in selectedClass.startingSkills" :key="skill">
+                      <li v-for="skill in selectedClass?.startingSkills" :key="skill">
                         {{ skill }}
                       </li>
                     </ul>
 
                     <div class="text-weight-bold">Starting Equipment:</div>
                     <ul>
-                      <li v-for="item in selectedClass.startingEquipment" :key="item.item">
+                      <li v-for="item in selectedClass?.startingEquipment" :key="item.item">
                         {{ item.item }} <span v-if="item.quantity > 1">({{ item.quantity }})</span>
                       </li>
                     </ul>
@@ -117,9 +117,12 @@ import { useCharacterStore } from 'src/stores/character-store';
 const router = useRouter();
 const characterStore = useCharacterStore();
 
+// Define valid class groups as a type
+type ClassGroup = 'MILITARY' | 'CIVILIAN' | 'SCIENTIST' | 'ZOMBIE';
+
 // Form state
 const name = ref('');
-const classGroup = ref('');
+const classGroup = ref<ClassGroup | ''>('');
 const subClass = ref('');
 const loading = ref(false);
 
@@ -129,23 +132,26 @@ const errorMessage = ref('');
 
 // Class options
 const classGroupOptions = [
-  { label: 'Military', value: 'MILITARY' },
-  { label: 'Civilian', value: 'CIVILIAN' },
-  { label: 'Scientist', value: 'SCIENTIST' },
-  { label: 'Zombie', value: 'ZOMBIE' }
+  { label: 'Military', value: 'MILITARY' as ClassGroup },
+  { label: 'Civilian', value: 'CIVILIAN' as ClassGroup },
+  { label: 'Scientist', value: 'SCIENTIST' as ClassGroup },
+  { label: 'Zombie', value: 'ZOMBIE' as ClassGroup }
 ];
 
 // Dynamic subclass options based on selected class group
 const subClassOptions = computed(() => {
-  if (!classGroup.value || !characterStore.classDefinitions[classGroup.value]) {
+  if (!classGroup.value || !(classGroup.value in characterStore.classDefinitions)) {
     return [];
   }
 
-  const group = characterStore.classDefinitions[classGroup.value];
-  return Object.keys(group).map(key => ({
-    label: group[key].name,
-    value: key
-  }));
+  const group = characterStore.classDefinitions[classGroup.value as ClassGroup];
+  return Object.keys(group).map(key => {
+    const subClass = group[key];
+    return {
+      label: subClass?.name || key,
+      value: key
+    };
+  });
 });
 
 // Selected class details for preview
@@ -154,7 +160,7 @@ const selectedClass = computed(() => {
     return null;
   }
 
-  return characterStore.classDefinitions[classGroup.value][subClass.value];
+  return characterStore.classDefinitions[classGroup.value as ClassGroup]?.[subClass.value];
 });
 
 // Reset subclass when class group changes
@@ -176,7 +182,7 @@ const onSubmit = async () => {
   try {
     await characterStore.createCharacter({
       name: name.value,
-      classGroup: classGroup.value,
+      classGroup: classGroup.value as ClassGroup,
       subClass: subClass.value
     });
 

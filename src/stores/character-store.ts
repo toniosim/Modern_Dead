@@ -2,6 +2,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { api } from 'src/boot/axios';
+export type ClassGroup = 'MILITARY' | 'CIVILIAN' | 'SCIENTIST' | 'ZOMBIE';
 
 // Define character types
 export interface CharacterClass {
@@ -15,7 +16,7 @@ export interface Character {
   _id: string;
   name: string;
   type: 'survivor' | 'zombie';
-  classGroup: string;
+  classGroup: ClassGroup;
   subClass: string;
   level: number;
   experience: number;
@@ -66,7 +67,7 @@ export const useCharacterStore = defineStore('character', () => {
   const currentCharacter = ref<Character | null>(null);
   const loading = ref(false);
   const error = ref<string | null>(null);
-  const classDefinitions = ref({
+  const classDefinitions = ref<Record<ClassGroup, Record<string, CharacterClass>>>({
     MILITARY: {
       PRIVATE: {
         name: 'Private',

@@ -1,5 +1,4 @@
 // server/src/migrations/cli.js
-#!/usr/bin/env node
 require('dotenv').config({ path: '../.env' });
 const mongoose = require('mongoose');
 const migrationManager = require('./migration');

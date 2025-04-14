@@ -5,8 +5,6 @@ const mongoose = require('mongoose');
 const options = {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-  // Connection pool settings
-  poolSize: process.env.MONGODB_POOL_SIZE || 10,
   // Max number of socket connections
   maxPoolSize: process.env.MONGODB_MAX_POOL_SIZE || 50,
   // Min number of socket connections
@@ -21,15 +19,8 @@ const options = {
   waitQueueTimeoutMS: 5000,
   // Automatically build indexes
   autoIndex: process.env.NODE_ENV !== 'production',
-  // Enable auto-reconnect attempts
-  autoReconnect: true,
-  // Reconnect time in ms
-  reconnectTries: Number.MAX_VALUE,
-  reconnectInterval: 1000,
   // Buffer commands until connection restored
-  bufferCommands: true,
-  // Query timeout
-  maxTimeMS: 30000
+  bufferCommands: true
 };
 
 // Connect to MongoDB

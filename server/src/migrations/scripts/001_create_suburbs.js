@@ -16,19 +16,33 @@ module.exports = {
     };
 
     const getDistrict = (x, y) => {
-      // Calculate district number (1-5) within division
+      // Calculate local position within division (0-4)
       const localX = Math.floor(x / 10) % 5;
       const localY = Math.floor(y / 10) % 5;
-      return localY * 5 + localX + 1;
+
+      // Group the 25 suburbs into 5 districts (5 suburbs per district)
+      // One simple way is to group by rows
+      return Math.floor((localY * 5 + localX) / 5) + 1;
     };
 
-    // Generate suburb names (placeholder logic)
+    // Generate suburb names - we can replace with actual UD names later
     const generateSuburbName = (x, y) => {
-      const prefixes = ['North', 'East', 'South', 'West', 'Old', 'New', 'Central'];
-      const suffixes = ['town', 'ville', 'burg', 'field', 'gate', 'wood', 'haven', 'port', 'shire'];
+      // Significantly expanded lists for more combinations
+      const prefixes = [
+        'North', 'East', 'South', 'West', 'Old', 'New', 'Central',
+        'Upper', 'Lower', 'High', 'Low', 'Mid', 'Royal', 'Grand',
+        'Green', 'Red', 'Blue', 'Gold', 'Silver', 'Crystal'
+      ];
 
-      const prefixIndex = (x + y) % prefixes.length;
-      const suffixIndex = (x * y) % suffixes.length;
+      const suffixes = [
+        'town', 'ville', 'burg', 'field', 'gate', 'wood', 'haven', 'port', 'shire',
+        'bridge', 'cross', 'grove', 'valley', 'hill', 'dale', 'crest', 'view', 'brook',
+        'land', 'side', 'creek', 'ford', 'lake', 'ridge', 'peak'
+      ];
+
+      // Use both x and y for more variety
+      const prefixIndex = (x * 13 + y * 7) % prefixes.length;
+      const suffixIndex = (y * 11 + x * 5) % suffixes.length;
 
       return `${prefixes[prefixIndex]}${suffixes[suffixIndex]}`;
     };

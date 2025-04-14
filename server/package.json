@@ -7,7 +7,10 @@
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
     "lint": "eslint src/**/*.js",
-    "test": "jest"
+    "test": "jest",
+    "migrate:status": "node src/migrations/cli.js status",
+    "migrate:up": "node src/migrations/cli.js up",
+    "migrate:down": "node src/migrations/cli.js down"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

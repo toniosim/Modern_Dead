@@ -2,43 +2,46 @@
 
 /* Main background and text colors */
 :root {
-    /* Base theme colors */
-    --md-primary: #222222;
-    --md-secondary: #444444;
-    --md-accent: #999999;
+    /* Base theme colors - Updated with dark green as primary */
+    --md-primary: #223322;        /* Dark green background */
+    --md-secondary: #334433;      /* Slightly lighter green */
+    --md-tertiary: #415541;       /* Even lighter green for contrast */
+    --md-accent: #97b897;         /* Muted green accent */
+
+    /* Status colors */
     --md-positive: #21BA45;
     --md-negative: #C10015;
     --md-info: #31CCEC;
     --md-warning: #F2C037;
 
     /* Character class colors */
-    --md-military: #21BA45;  /* Green */
-    --md-scientist: #31CCEC; /* Blue */
-    --md-civilian: #C10015;  /* Red */
-    --md-zombie: #666666;    /* Grey */
+    --md-military: #21BA45;       /* Green */
+    --md-scientist: #31CCEC;      /* Blue */
+    --md-civilian: #C10015;       /* Red */
+    --md-zombie: #8c8a8a;         /* Grey */
 
     /* Building colors */
-    --md-hospital: #ff9999;      /* Pink */
-    --md-police: #31CCEC;        /* Blue */
-    --md-fire: #C10015;          /* Red */
-    --md-necrotech: #9966CC;     /* Purple */
-    --md-street: #999999;        /* Grey */
-    --md-mall: #cc9b6d;          /* Brown */
+    --md-hospital: #ff9999;       /* Pink */
+    --md-police: #31CCEC;         /* Blue */
+    --md-fire: #C10015;           /* Red */
+    --md-necrotech: #9966CC;      /* Purple */
+    --md-street: #999999;         /* Grey */
+    --md-mall: #cc9b6d;           /* Brown */
 
     /* Status colors */
-    --md-powered: #F2C037;       /* Yellow */
-    --md-ransacked: #C10015;     /* Red */
-    --md-barricaded: #21BA45;    /* Green */
+    --md-powered: #F2C037;        /* Yellow */
+    --md-ransacked: #C10015;      /* Red */
+    --md-barricaded: #21BA45;     /* Green */
 
     /* Text colors */
-    --md-text: #EEEEEE;
-    --md-text-secondary: #AAAAAA;
-    --md-text-disabled: #777777;
+    --md-text: #BBCCBB;           /* Light green text */
+    --md-text-secondary: #6d7e6d; /* Muted green text */
+    --md-text-disabled: #4f5a4f;  /* Dark muted green */
 
     /* Background colors */
-    --md-background: #1a1a1a;
-    --md-card-background: #2a2a2a;
-    --md-dark-building: #111111;
+    --md-background: #223322;     /* Dark green background */
+    --md-card-background: #334433;/* Slightly lighter green */
+    --md-dark-building: #031a0d;  /* Very dark green for dark buildings */
 }
 
 /* Apply to Quasar components */
@@ -146,7 +149,7 @@
 }
 
 .ud-button:hover {
-    background-color: var(--md-primary);
+    background-color: var(--md-tertiary);
 }
 
 /* Inventory item styles */
@@ -200,6 +203,17 @@
     color: var(--md-warning);
 }
 
+/* Override link colors */
+a {
+    color: #78c49a;
+    text-decoration: none;
+}
+
+a:hover {
+    color: var(--md-text);
+    text-decoration: underline;
+}
+
 /* Map grid styles */
 .map-grid {
     border: 1px solid var(--md-accent);
@@ -237,6 +251,11 @@
 .message.zombie {
     border-left: 3px solid var(--md-zombie);
     font-style: italic;
+}
+
+/* Monospace text for more retro feel */
+body {
+    font-family: 'Courier New', Courier, monospace;
 }
 
 /* Dark mode overrides for Quasar components */
@@ -289,4 +308,36 @@
 
 .body--dark .q-separator {
     background: var(--md-secondary);
+}
+
+/* Add a subtle scan line effect for more retro feel */
+.q-page-container {
+    position: relative;
+}
+
+.q-page-container::after {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: repeating-linear-gradient(
+            0deg,
+            rgba(0, 0, 0, 0.03) 0px,
+            rgba(0, 0, 0, 0.03) 1px,
+            transparent 1px,
+            transparent 2px
+    );
+    pointer-events: none;
+    z-index: 9999;
+}
+
+/* Additional elements that mimic the retro green-screen look */
+.terminal-effect {
+    text-shadow: 0 0 5px rgba(184, 255, 218, 0.5);
+}
+
+.crt-glow {
+    box-shadow: 0 0 10px rgba(184, 255, 218, 0.3);
 }

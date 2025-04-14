@@ -3,10 +3,10 @@ import { defineBoot } from '#q-app/wrappers';
 import { setCssVar } from 'quasar';
 
 export default defineBoot(({ app }) => {
-  // Set primary brand colors
-  setCssVar('primary', '#222222');
-  setCssVar('secondary', '#444444');
-  setCssVar('accent', '#999999');
+  // Set primary brand colors with dark green as primary
+  setCssVar('primary', '#223322');    // Dark green
+  setCssVar('secondary', '#334433');  // Slightly lighter green
+  setCssVar('accent', '#97b897');     // Muted green accent
 
   // Set status colors
   setCssVar('positive', '#21BA45');
@@ -15,6 +15,6 @@ export default defineBoot(({ app }) => {
   setCssVar('warning', '#F2C037');
 
   // Set dark mode background and text colors
-  setCssVar('dark', '#1a1a1a');
-  setCssVar('dark-page', '#1a1a1a');
+  setCssVar('dark', '#223322');      // Dark green
+  setCssVar('dark-page', '#223322'); // Dark green
 });

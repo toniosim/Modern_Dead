@@ -108,22 +108,163 @@
       </div>
     </q-card-section>
 
-    <!-- Action buttons -->
     <q-card-section>
-      <div class="text-h6 q-mb-sm">Actions:</div>
+      <div class="text-h6 q-mb-sm">Action System Demo:</div>
+
+      <!-- AP Status Display -->
+      <div class="ap-status q-pa-sm q-mb-md">
+        <div class="row justify-between">
+          <div class="text-subtitle2">Action Points: {{ currentAp }}/50</div>
+          <div>
+            <q-btn
+              flat
+              dense
+              color="primary"
+              label="Reset AP"
+              @click="resetAp"
+              size="sm"
+            />
+          </div>
+        </div>
+        <q-linear-progress
+          :value="currentAp / 50"
+          :color="apProgressColor"
+          class="q-mt-xs"
+          size="md"
+        />
+      </div>
+
+      <!-- Action Buttons -->
       <div class="action-buttons q-mb-md">
-        <button class="ud-button">Search</button>
-        <button class="ud-button">Attack</button>
-        <button class="ud-button">Barricade</button>
-        <button class="ud-button">Enter Building</button>
-        <button class="ud-button">Use Radio</button>
+        <div class="row q-col-gutter-md">
+          <!-- Movement action -->
+          <div class="col-auto">
+            <action-button
+              label="Move"
+              icon="arrow_forward"
+              :ap-cost="1"
+              action-type="MOVE"
+              color="primary"
+              description="Move one block in a direction"
+              :current-ap="currentAp"
+              @ap-consumed="consumeAp"
+              @action-success="handleActionSuccess"
+            />
+          </div>
+
+          <!-- Attack action -->
+          <div class="col-auto">
+            <action-button
+              label="Attack"
+              icon="gps_fixed"
+              :ap-cost="3"
+              action-type="ATTACK"
+              color="negative"
+              description="Attack a nearby target"
+              :current-ap="currentAp"
+              @ap-consumed="consumeAp"
+              @action-success="handleActionSuccess"
+            />
+          </div>
+
+          <!-- Search action -->
+          <div class="col-auto">
+            <action-button
+              label="Search"
+              icon="search"
+              :ap-cost="5"
+              action-type="SEARCH"
+              color="info"
+              description="Search the building for items"
+              :current-ap="currentAp"
+              @ap-consumed="consumeAp"
+              @action-success="handleActionSuccess"
+            />
+          </div>
+
+          <!-- Barricade action (high cost to show insufficient AP) -->
+          <div class="col-auto">
+            <action-button
+              label="Barricade"
+              icon="construction"
+              :ap-cost="15"
+              action-type="BARRICADE"
+              color="warning"
+              description="Strengthen building defenses"
+              :current-ap="currentAp"
+              @ap-consumed="consumeAp"
+              @action-success="handleActionSuccess"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Action History -->
+      <div v-if="actionHistory.length > 0" class="action-history q-mt-md">
+        <div class="text-subtitle2 q-mb-xs">Recent Actions:</div>
+        <q-list bordered separator class="action-history-list">
+          <q-item v-for="(action, index) in actionHistory" :key="index">
+            <q-item-section>
+              <q-item-label>{{ action.message }}</q-item-label>
+              <q-item-label caption>Cost: {{ action.cost }} AP</q-item-label>
+            </q-item-section>
+            <q-item-section side>
+              <q-item-label caption>{{ action.time }}</q-item-label>
+            </q-item-section>
+          </q-item>
+        </q-list>
       </div>
     </q-card-section>
   </q-card>
 </template>
 
 <script setup lang="ts">
-// No special logic needed for this demo component
+import { ref, computed } from 'vue';
+import ActionButton from './ap/ActionButton.vue';
+
+interface ActionHistoryItem {
+  type: string;
+  cost: number;
+  message: string;
+  time: string;
+}
+
+// Demo state for AP system
+const currentAp = ref(50);
+const actionHistory = ref<ActionHistoryItem[]>([]);
+
+// Computed properties for AP status
+const apProgressColor = computed(() => {
+  if (currentAp.value >= 40) return 'positive';
+  if (currentAp.value >= 20) return 'warning';
+  return 'negative';
+});
+
+// Handle AP consumption
+const consumeAp = (cost: number) => {
+  currentAp.value = Math.max(0, currentAp.value - cost);
+};
+
+// Reset AP for demo purposes
+const resetAp = () => {
+  currentAp.value = 50;
+};
+
+// Handle successful actions
+const handleActionSuccess = (actionData: { type: string; cost: number }) => {
+  // Add to action history
+  actionHistory.value.unshift({
+    type: actionData.type,
+    cost: actionData.cost,
+    message: `${actionData.type} action performed!`,
+    time: new Date().toLocaleTimeString()
+  });
+
+  // Keep only the last 5 actions
+  if (actionHistory.value.length > 5) {
+    actionHistory.value = actionHistory.value.slice(0, 5);
+  }
+};
 </script>
 
 <style scoped>
@@ -141,5 +282,17 @@
 .action-buttons {
   display: flex;
   flex-wrap: wrap;
+}
+
+.ap-status {
+  border: 1px solid var(--md-accent);
+  border-radius: 4px;
+  background-color: var(--md-primary);
+}
+
+.action-history-list {
+  max-height: 200px;
+  overflow-y: auto;
+  background-color: var(--md-card-background);
 }
 </style>

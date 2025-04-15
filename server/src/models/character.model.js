@@ -97,7 +97,11 @@ const characterSchema = new Schema({
   actions: {
     availableActions: {
       type: Number,
-      default: 50
+      default: 50,
+      min: 0,
+      max: function() {
+        return this.maxActions || 50;
+      }
     },
     lastActionTime: {
       type: Date,
@@ -106,7 +110,36 @@ const characterSchema = new Schema({
     // Regeneration rate (AP per hour)
     regenerationRate: {
       type: Number,
-      default: 1
+      default: 1,
+      min: 0.5
+    },
+    // Maximum AP capacity
+    maxActions: {
+      type: Number,
+      default: 50,
+      min: 10,
+      max: 100
+    },
+    // Bonus regeneration from location/status effects
+    bonusRegeneration: {
+      type: Number,
+      default: 0
+    },
+    // Optional field to track currently active recovery location
+    recoveryLocationId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Building',
+      default: null
+    },
+    // Special status flag for "resting" action
+    isResting: {
+      type: Boolean,
+      default: false
+    },
+    // Track when the AP was last fully consumed
+    lastEmptyTime: {
+      type: Date,
+      default: null
     }
   },
   // XP cost modifiers based on class
@@ -239,6 +272,74 @@ characterSchema.methods.revive = function() {
 
   // Change type to survivor
   return this.changeType('survivor');
+};
+
+// Calculate current AP based on time elapsed
+characterSchema.methods.calculateCurrentAP = function() {
+  if (this.actions.availableActions >= this.actions.maxActions) {
+    return this.actions.availableActions;
+  }
+
+  const now = new Date();
+  const lastUpdate = this.actions.lastActionTime || now;
+  const hoursSinceUpdate = (now - lastUpdate) / (1000 * 60 * 60);
+
+  // Calculate base regeneration
+  let totalRegeneration = hoursSinceUpdate * (this.actions.regenerationRate + this.actions.bonusRegeneration);
+
+  // Cap at max AP
+  const newAP = Math.min(
+    this.actions.maxActions,
+    this.actions.availableActions + totalRegeneration
+  );
+
+  return Math.floor(newAP);
+};
+
+// Update character's AP and save
+characterSchema.methods.updateAP = function() {
+  const currentAP = this.calculateCurrentAP();
+
+  if (currentAP > this.actions.availableActions) {
+    this.actions.availableActions = currentAP;
+    this.actions.lastActionTime = new Date();
+  }
+
+  return this.save();
+};
+
+// Consume AP for an action
+characterSchema.methods.consumeAP = function(amount) {
+  // First make sure AP is up to date
+  this.updateAP();
+
+  if (this.actions.availableActions < amount) {
+    return { success: false, message: 'Insufficient action points' };
+  }
+
+  this.actions.availableActions -= amount;
+  this.actions.lastActionTime = new Date();
+
+  // Track when AP was fully consumed
+  if (this.actions.availableActions === 0) {
+    this.actions.lastEmptyTime = new Date();
+  }
+
+  return this.save().then(() => ({ success: true, remainingAP: this.actions.availableActions }));
+};
+
+// Begin resting at a location
+characterSchema.methods.startResting = function(buildingId) {
+  this.actions.isResting = true;
+  this.actions.recoveryLocationId = buildingId;
+  return this.save();
+};
+
+// Stop resting
+characterSchema.methods.stopResting = function() {
+  this.actions.isResting = false;
+  this.actions.recoveryLocationId = null;
+  return this.save();
 };
 
 // Static method to create a new character with class-specific setup

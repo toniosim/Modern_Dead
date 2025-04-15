@@ -11,7 +11,7 @@
             <!-- AP Display Component -->
             <ap-display
               :in-building= true
-              :building-id= "building123"
+              :building-id= "null"
             />
 
             <!-- Other status information -->

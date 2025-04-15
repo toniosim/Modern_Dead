@@ -52,10 +52,49 @@ const buildingSchema = new Schema({
   properties: {
     type: Schema.Types.Mixed
   },
-  // For special buildings
-  isRevivePoint: {
-    type: Boolean,
-    default: false
+// AP regeneration properties
+  apRegeneration: {
+    // Base AP regeneration bonus when resting in this building
+    bonus: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 5
+    },
+    // Is this a special AP recovery location?
+    isRecoveryLocation: {
+      type: Boolean,
+      default: false
+    },
+    // Class-specific bonuses (if applicable)
+    classBonuses: {
+      military: {
+        type: Number,
+        default: 0
+      },
+      civilian: {
+        type: Number,
+        default: 0
+      },
+      scientist: {
+        type: Number,
+        default: 0
+      },
+      zombie: {
+        type: Number,
+        default: 0
+      }
+    },
+    // Max capacity for resting (0 for unlimited)
+    maxCapacity: {
+      type: Number,
+      default: 0
+    },
+    // Current number of characters resting here
+    currentOccupancy: {
+      type: Number,
+      default: 0
+    }
   },
   specialType: String,
   // Timestamps
@@ -113,6 +152,53 @@ buildingSchema.methods.changeState = function(newState) {
     this.doorsOpen = true;
   }
   return this.save();
+};
+
+// Get AP regeneration bonus for a specific character
+buildingSchema.methods.getAPBonus = function(character) {
+  if (!this.isPowered) {
+    // Reduced benefit in unpowered buildings
+    return this.apRegeneration.bonus * 0.5;
+  }
+
+  let bonus = this.apRegeneration.bonus;
+
+  // Add class-specific bonuses if applicable
+  if (character && character.classGroup) {
+    const classGroup = character.classGroup.toLowerCase();
+    if (this.apRegeneration.classBonuses[classGroup]) {
+      bonus += this.apRegeneration.classBonuses[classGroup];
+    }
+  }
+
+  return bonus;
+};
+
+// Check if building can accept more resting characters
+buildingSchema.methods.canAcceptResting = function() {
+  if (this.apRegeneration.maxCapacity === 0) {
+    return true; // Unlimited capacity
+  }
+
+  return this.apRegeneration.currentOccupancy < this.apRegeneration.maxCapacity;
+};
+
+// Add a resting character
+buildingSchema.methods.addRestingCharacter = function() {
+  if (this.apRegeneration.maxCapacity > 0) {
+    this.apRegeneration.currentOccupancy += 1;
+    return this.save();
+  }
+  return Promise.resolve(this);
+};
+
+// Remove a resting character
+buildingSchema.methods.removeRestingCharacter = function() {
+  if (this.apRegeneration.currentOccupancy > 0) {
+    this.apRegeneration.currentOccupancy -= 1;
+    return this.save();
+  }
+  return Promise.resolve(this);
 };
 
 // Static method to find buildings in range

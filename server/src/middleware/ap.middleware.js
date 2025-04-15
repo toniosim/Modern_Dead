@@ -2,6 +2,7 @@
 const Character = require('../models/character.model');
 const apService = require('../services/ap.service');
 const actionCosts = require('../config/action-costs.config');
+const socketService = require('../services/socket.service');
 
 /**
  * Middleware to update and validate action points
@@ -65,13 +66,13 @@ exports.validateAP = (actionType, options = {}) => {
         return next();
       }
 
-      // Determine action type - can be string or function that returns string
-      const resolvedActionType = typeof actionType === 'function'
+      // Store action type for use in other middleware
+      req.actionType = typeof actionType === 'function'
         ? actionType(req)
         : actionType;
 
       // Get base AP cost for this action
-      let apCost = actionCosts.getBaseCost(resolvedActionType);
+      let apCost = actionCosts.getBaseCost(req.actionType);
 
       // Apply any modifiers
       if (options.costModifier) {
@@ -91,6 +92,15 @@ exports.validateAP = (actionType, options = {}) => {
 
       // Check if enough AP is available
       if (req.character.actions.availableActions < apCost) {
+        // Emit socket event for insufficient AP
+        await socketService.sendApInsufficient(
+          req.user.userId,
+          req.character._id,
+          apCost,
+          req.character.actions.availableActions,
+          req.actionType
+        );
+
         return res.status(403).json({
           success: false,
           error: 'insufficient_ap',
@@ -124,6 +134,16 @@ exports.consumeAP = async (req, res, next) => {
 
     // Consume AP
     const result = await apService.consumeAp(req.character, req.apCost);
+
+    // If successful, emit socket event
+    if (result.success) {
+      await socketService.sendApConsumed(
+        req.user.userId,
+        req.character._id,
+        req.apCost,
+        req.actionType || 'unknown'
+      );
+    }
 
     // Attach result to response locals for inclusion in response
     res.locals.apResult = {

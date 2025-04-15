@@ -13,6 +13,7 @@ const testRoutes = require('./routes/test.routes');
 const authRoutes = require('./routes/auth.routes');
 const { errorHandler } = require('./middleware/error.middleware');
 const { checkJwtConfig } = require('./middleware/jwt-config.middleware');
+const socketService = require('./services/socket.service');
 
 // Import database connection
 const connectDB = require('./config/database');
@@ -22,7 +23,7 @@ const app = express();
 
 // Set up Socket.io
 const server = http.createServer(app);
-const io = socketio(server, {
+const io = socketService.initialize(server, {
   cors: {
     origin: process.env.CLIENT_URL || 'http://localhost:9000',
     methods: ['GET', 'POST'],

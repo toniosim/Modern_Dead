@@ -612,7 +612,20 @@ export const useCharacterStore = defineStore('character', () => {
     }
   }
 
+  function updateApInfo(newApInfo: Partial<ApInfo>) {
+    apInfo.value = {
+      ...apInfo.value,
+      ...newApInfo,
+      lastUpdated: new Date()
+    };
 
+    // Start/stop AP update timer as needed
+    if (newApInfo.current && newApInfo.max && newApInfo.current >= newApInfo.max) {
+      stopApUpdateTimer();
+    } else {
+      startApUpdateTimer();
+    }
+  }
 
   return {
     // Existing state
@@ -653,6 +666,7 @@ export const useCharacterStore = defineStore('character', () => {
     // New AP-related actions
     fetchApInfo,
     consumeAp,
+    updateApInfo,
     toggleResting,
     formatTimeUntilNextAp,
     startApUpdateTimer,

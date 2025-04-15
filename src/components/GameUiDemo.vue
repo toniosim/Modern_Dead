@@ -234,9 +234,16 @@
 import { ref, computed } from 'vue';
 import ActionButton from './ap/ActionButton.vue';
 
+interface ActionHistoryItem {
+  type: string;
+  cost: number;
+  message: string;
+  time: string;
+}
+
 // Demo state for AP system
 const currentAp = ref(50);
-const actionHistory = ref([]);
+const actionHistory = ref<ActionHistoryItem[]>([]);
 
 // Computed properties for AP status
 const apProgressColor = computed(() => {
@@ -246,7 +253,7 @@ const apProgressColor = computed(() => {
 });
 
 // Handle AP consumption
-const consumeAp = (cost) => {
+const consumeAp = (cost: number) => {
   currentAp.value = Math.max(0, currentAp.value - cost);
 };
 
@@ -256,7 +263,7 @@ const resetAp = () => {
 };
 
 // Handle successful actions
-const handleActionSuccess = (actionData) => {
+const handleActionSuccess = (actionData: { type: string; cost: number }) => {
   // Add to action history
   actionHistory.value.unshift({
     type: actionData.type,

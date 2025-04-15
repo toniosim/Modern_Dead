@@ -55,44 +55,35 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 
-const props = defineProps({
-  label: {
-    type: String,
-    required: true
-  },
-  icon: {
-    type: String,
-    default: ''
-  },
-  apCost: {
-    type: Number,
-    required: true
-  },
-  actionType: {
-    type: String,
-    required: true
-  },
-  description: {
-    type: String,
-    default: ''
-  },
-  color: {
-    type: String,
-    default: 'primary'
-  },
-  // For demo purposes - normally this would come from a store
-  currentAp: {
-    type: Number,
-    default: 50
-  },
-  // For demo purposes - normally would be determined by other factors
-  disabled: {
-    type: Boolean,
-    default: false
-  }
-});
+interface ActionButtonProps {
+  label: string;
+  icon?: string;
+  apCost: number;
+  actionType: string;
+  description?: string;
+  color?: string;
+  currentAp: number;
+  disabled?: boolean;
+}
 
-const emit = defineEmits(['action-success', 'action-failure', 'ap-consumed']);
+// Define proper types for emits
+interface ActionSuccessEvent {
+  type: string;
+  cost: number;
+}
+
+interface ActionFailureEvent {
+  type: string;
+  error: any;
+}
+
+const props = defineProps<ActionButtonProps>();
+
+const emit = defineEmits<{
+  (e: 'action-success', data: ActionSuccessEvent): void;
+  (e: 'action-failure', data: ActionFailureEvent): void;
+  (e: 'ap-consumed', cost: number): void;
+}>();
 
 const loading = ref(false);
 const showFeedback = ref(false);

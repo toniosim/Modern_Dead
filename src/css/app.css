@@ -5,7 +5,7 @@
 
 /* Additional global styles */
 body {
-    font-family: 'Courier New', Courier, monospace;
+    font-family: 'Trebuchet MS', Verdana, Arial, sans-serif;
     background-color: var(--md-background);
     color: var(--md-text);
 }
@@ -43,7 +43,6 @@ a:not(.q-btn):hover {
 
 /* Custom action button styling */
 .action-btn {
-    font-family: 'Courier New', Courier, monospace;
     border: 1px solid var(--md-accent);
     background-color: var(--md-primary);
     color: var(--md-text);
@@ -93,7 +92,6 @@ a:not(.q-btn):hover {
 
 /* Monospaced text for game messages */
 .game-message {
-    font-family: 'Courier New', Courier, monospace;
     white-space: pre-wrap;
     padding: 8px;
     margin: 8px 0;

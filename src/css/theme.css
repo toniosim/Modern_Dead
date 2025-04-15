@@ -255,7 +255,7 @@ a:hover {
 
 /* Monospace text for more retro feel */
 body {
-    font-family: 'Courier New', Courier, monospace;
+    font-family: 'Trebuchet MS', Verdana, Arial, sans-serif;
 }
 
 /* Dark mode overrides for Quasar components */

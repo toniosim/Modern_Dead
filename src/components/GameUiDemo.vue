@@ -108,18 +108,6 @@
       </div>
     </q-card-section>
 
-    <!-- Action buttons -->
-    <q-card-section>
-      <div class="text-h6 q-mb-sm">Actions:</div>
-      <div class="action-buttons q-mb-md">
-        <button class="ud-button">Search</button>
-        <button class="ud-button">Attack</button>
-        <button class="ud-button">Barricade</button>
-        <button class="ud-button">Enter Building</button>
-        <button class="ud-button">Use Radio</button>
-      </div>
-    </q-card-section>
-
     <q-card-section>
       <div class="text-h6 q-mb-sm">Action System Demo:</div>
 

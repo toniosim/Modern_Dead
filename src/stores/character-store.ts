@@ -12,6 +12,21 @@ export interface CharacterClass {
   startingEquipment: { item: string; quantity: number }[];
 }
 
+// Define AP-related types
+export interface ApInfo {
+  current: number;
+  max: number;
+  regenerationRate: number;
+  nextApIn: {
+    atMaximum: boolean;
+    secondsUntilNext: number;
+    minutesUntilNext: number;
+    nextApAt: Date;
+    rate: number;
+  };
+  lastUpdated?: Date;
+}
+
 export interface Character {
   _id: string;
   name: string;
@@ -44,6 +59,9 @@ export interface Character {
     availableActions: number;
     lastActionTime: string;
     regenerationRate: number;
+    maxActions: number;
+    bonusRegeneration: number;
+    isResting: boolean;
   };
   xpCosts: {
     military: number;
@@ -61,12 +79,34 @@ export interface CharacterCreationData {
   subClass: string;
 }
 
+export interface CharacterCreationData {
+  name: string;
+  classGroup: string;
+  subClass: string;
+}
+
 export const useCharacterStore = defineStore('character', () => {
   // State
   const characters = ref<Character[]>([]);
   const currentCharacter = ref<Character | null>(null);
   const loading = ref(false);
   const error = ref<string | null>(null);
+
+  // AP-related state
+  const apInfo = ref<ApInfo>({
+    current: 0,
+    max: 50,
+    regenerationRate: 1,
+    nextApIn: {
+      atMaximum: false,
+      secondsUntilNext: 0,
+      minutesUntilNext: 0,
+      nextApAt: new Date(),
+      rate: 1
+    },
+    lastUpdated: new Date()
+  });
+
   const classDefinitions = ref<Record<ClassGroup, Record<string, CharacterClass>>>({
     MILITARY: {
       PRIVATE: {
@@ -155,12 +195,57 @@ export const useCharacterStore = defineStore('character', () => {
     }
   });
 
+  const apUpdateTimer = ref<number | null>(null);
+  const isResting = ref(false);
+
   // Getters
   const hasCharacters = computed(() => characters.value.length > 0);
   const getCharactersByType = computed(() => (type: 'survivor' | 'zombie') =>
     characters.value.filter(char => char.type === type)
   );
   const getActiveCharacter = computed(() => currentCharacter.value);
+
+  // AP-related computed properties
+  const currentAp = computed(() => {
+    if (!currentCharacter.value) return 0;
+
+    // If we have AP info, use that, otherwise use character data
+    if (apInfo.value && apInfo.value.current !== undefined) {
+      return apInfo.value.current;
+    }
+
+    return currentCharacter.value.actions.availableActions;
+  });
+
+  const maxAp = computed(() => {
+    if (!currentCharacter.value) return 50;
+
+    // If we have AP info, use that, otherwise use character data
+    if (apInfo.value && apInfo.value.max !== undefined) {
+      return apInfo.value.max;
+    }
+
+    return currentCharacter.value.actions.maxActions || 50;
+  });
+
+  const apPercentage = computed(() => {
+    if (maxAp.value === 0) return 0;
+    return Math.min(100, Math.round((currentAp.value / maxAp.value) * 100));
+  });
+
+  const isApFull = computed(() => currentAp.value >= maxAp.value);
+
+  const timeUntilNextAp = computed(() => {
+    if (!apInfo.value || !apInfo.value.nextApIn) {
+      return null;
+    }
+
+    return apInfo.value.nextApIn;
+  });
+
+  const canPerformAction = computed(() => (apCost: number) => {
+    return currentAp.value >= apCost;
+  });
 
   // Actions
   async function fetchUserCharacters() {
@@ -288,37 +373,290 @@ export const useCharacterStore = defineStore('character', () => {
     }
   }
 
+  /**
+   * Fetch current AP information from the server
+   */
+  async function fetchApInfo() {
+    if (!currentCharacter.value) return;
+
+    loading.value = true;
+    error.value = null;
+
+    try {
+      const response = await api.get(`/characters/${currentCharacter.value._id}/ap`);
+
+      if (response.data && response.data.success) {
+        apInfo.value = response.data.ap;
+        apInfo.value.lastUpdated = new Date();
+
+        // Start AP update timer
+        startApUpdateTimer();
+      }
+
+      return apInfo.value;
+    } catch (err: any) {
+      error.value = err.response?.data?.message || 'Failed to fetch AP information';
+      throw error.value;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  /**
+   * Start timer to update AP display without server requests
+   */
+  function startApUpdateTimer() {
+    // Clear existing timer if any
+    if (apUpdateTimer.value) {
+      window.clearInterval(apUpdateTimer.value);
+      apUpdateTimer.value = null;
+    }
+
+    // Don't start timer if we're at max AP
+    if (isApFull.value) {
+      return;
+    }
+
+    // Update every second
+    apUpdateTimer.value = window.setInterval(() => {
+      updateApClientSide();
+    }, 1000);
+  }
+
+  /**
+   * Stop AP update timer
+   */
+  function stopApUpdateTimer() {
+    if (apUpdateTimer.value) {
+      window.clearInterval(apUpdateTimer.value);
+      apUpdateTimer.value = null;
+    }
+  }
+
+  /**
+   * Update AP display on client side based on elapsed time
+   * This avoids constant server requests
+   */
+  function updateApClientSide() {
+    if (!apInfo.value || !apInfo.value.lastUpdated) {
+      return;
+    }
+
+    // If we're at max AP, nothing to do
+    if (currentAp.value >= maxAp.value) {
+      apInfo.value.current = maxAp.value;
+      apInfo.value.nextApIn.atMaximum = true;
+      stopApUpdateTimer();
+      return;
+    }
+
+    // Calculate elapsed time since last update
+    const now = new Date();
+    const elapsedMs = now.getTime() - apInfo.value.lastUpdated.getTime();
+    const elapsedHours = elapsedMs / (1000 * 60 * 60);
+
+    // Calculate regenerated AP
+    const regenerationRate = apInfo.value.regenerationRate || 1;
+    const regeneratedAp = elapsedHours * regenerationRate;
+
+    // Calculate new AP value
+    const newAp = Math.min(
+      maxAp.value,
+      apInfo.value.current + regeneratedAp
+    );
+
+    // Update AP info
+    apInfo.value.current = newAp;
+
+    // Calculate time until next AP
+    if (newAp < maxAp.value) {
+      const pointsUntilMax = maxAp.value - newAp;
+      const hoursUntilMax = pointsUntilMax / regenerationRate;
+
+      const secondsUntilNext = Math.floor((1 / regenerationRate) * 3600);
+      const nextApAt = new Date(now.getTime() + (secondsUntilNext * 1000));
+
+      apInfo.value.nextApIn = {
+        atMaximum: false,
+        secondsUntilNext,
+        minutesUntilNext: Math.floor(secondsUntilNext / 60),
+        nextApAt,
+        rate: regenerationRate
+      };
+    } else {
+      apInfo.value.nextApIn.atMaximum = true;
+    }
+  }
+
+  /**
+   * Consumer AP for an action
+   * @param apCost - AP cost of the action
+   */
+  function consumeAp(apCost: number) {
+    if (!currentCharacter.value || !apInfo.value) {
+      return false;
+    }
+
+    if (apInfo.value.current < apCost) {
+      return false;
+    }
+
+    // Update AP info
+    apInfo.value.current -= apCost;
+    apInfo.value.lastUpdated = new Date();
+
+    // Update next AP calculation
+    if (apInfo.value.current < maxAp.value) {
+      const regenerationRate = apInfo.value.regenerationRate || 1;
+      const secondsUntilNext = Math.floor((1 / regenerationRate) * 3600);
+      const nextApAt = new Date(new Date().getTime() + (secondsUntilNext * 1000));
+
+      apInfo.value.nextApIn = {
+        atMaximum: false,
+        secondsUntilNext,
+        minutesUntilNext: Math.floor(secondsUntilNext / 60),
+        nextApAt,
+        rate: regenerationRate
+      };
+
+      // Make sure timer is running
+      startApUpdateTimer();
+    }
+
+    return true;
+  }
+
+  /**
+   * Toggle resting state for faster AP regeneration
+   */
+  async function toggleResting(buildingId?: string) {
+    if (!currentCharacter.value) {
+      return { success: false, message: 'No active character' };
+    }
+
+    loading.value = true;
+    error.value = null;
+
+    try {
+      const action = isResting.value ? 'stop' : 'start';
+
+      const response = await api.post('/characters/rest', {
+        characterId: currentCharacter.value._id,
+        buildingId,
+        action
+      });
+
+      if (response.data && response.data.success) {
+        isResting.value = action === 'start';
+
+        // Update AP info with new regeneration rate
+        if (response.data.rate) {
+          apInfo.value.regenerationRate = response.data.rate;
+
+          // Recalculate time until next AP
+          await fetchApInfo();
+        }
+      }
+
+      return response.data;
+    } catch (err: any) {
+      error.value = err.response?.data?.message || 'Failed to toggle resting state';
+      throw error.value;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  /**
+   * Format time until next AP for display
+   */
+  function formatTimeUntilNextAp(): string {
+    if (!timeUntilNextAp.value) {
+      return 'Unknown';
+    }
+
+    if (timeUntilNextAp.value.atMaximum) {
+      return 'Full';
+    }
+
+    if (timeUntilNextAp.value.minutesUntilNext > 0) {
+      return `${timeUntilNextAp.value.minutesUntilNext}m ${timeUntilNextAp.value.secondsUntilNext % 60}s`;
+    }
+
+    return `${timeUntilNextAp.value.secondsUntilNext}s`;
+  }
+
+  // Clean up when store is no longer used
+  function cleanUp() {
+    stopApUpdateTimer();
+  }
+
+  // Extension to setActiveCharacter to fetch AP info
   async function setActiveCharacter(characterId: string) {
     const character = characters.value.find(c => c._id === characterId);
 
     if (character) {
       currentCharacter.value = character;
+
+      // Fetch AP info for active character
+      await fetchApInfo();
+
       return character;
     } else {
-      return getCharacter(characterId);
+      const fetchedCharacter = await getCharacter(characterId);
+
+      // Fetch AP info for active character
+      await fetchApInfo();
+
+      return fetchedCharacter;
     }
   }
 
+
+
   return {
-    // State
+    // Existing state
     characters,
     currentCharacter,
     loading,
     error,
-    classDefinitions,
+    classDefinitions,  // This was in the original store but not in the cutoff excerpt
 
-    // Getters
+    // AP-related state
+    apInfo,
+    isResting,
+
+    // Existing getters
     hasCharacters,
     getCharactersByType,
     getActiveCharacter,
 
-    // Actions
+    // AP-related getters
+    currentAp,
+    maxAp,
+    apPercentage,
+    isApFull,
+    timeUntilNextAp,
+    canPerformAction,
+
+    // Existing actions
     fetchUserCharacters,
     createCharacter,
     getCharacter,
     updateCharacterState,
     addSkill,
     deleteCharacter,
-    setActiveCharacter
+
+    // Modified with AP support
+    setActiveCharacter,
+
+    // New AP-related actions
+    fetchApInfo,
+    consumeAp,
+    toggleResting,
+    formatTimeUntilNextAp,
+    startApUpdateTimer,
+    stopApUpdateTimer,
+    cleanUp
   };
 });

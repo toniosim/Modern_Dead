@@ -1,3 +1,4 @@
+// src/components/ap/ActionButton.vue
 <template>
   <div class="action-button-wrapper" :class="{ 'action-disabled': !canPerformAction }">
     <q-btn
@@ -11,11 +12,12 @@
       :class="actionButtonClass"
     >
       <!-- AP Cost Badge -->
-      <ap-cost-indicator
-        :cost="apCost"
-        :show-warning-at="showWarningAt"
+      <q-badge
+        :color="isAffordable ? 'primary' : 'negative'"
         class="ap-badge"
-      />
+      >
+        {{ apCost }} AP
+      </q-badge>
 
       <!-- Tooltip -->
       <q-tooltip
@@ -51,9 +53,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
-import { useCharacterStore } from 'src/stores/character-store';
-import ApCostIndicator from './ApCostIndicator.vue';
+import { ref, computed } from 'vue';
 
 const props = defineProps({
   label: {
@@ -80,31 +80,26 @@ const props = defineProps({
     type: String,
     default: 'primary'
   },
-  showWarningAt: {
+  // For demo purposes - normally this would come from a store
+  currentAp: {
     type: Number,
-    default: 0.5
+    default: 50
   },
-  // Optional target ID for actions that require a target
-  targetId: {
-    type: String,
-    default: ''
-  },
-  // Additional action data
-  actionData: {
-    type: Object,
-    default: () => ({})
+  // For demo purposes - normally would be determined by other factors
+  disabled: {
+    type: Boolean,
+    default: false
   }
 });
 
-const emit = defineEmits(['action-success', 'action-failure']);
+const emit = defineEmits(['action-success', 'action-failure', 'ap-consumed']);
 
-const characterStore = useCharacterStore();
 const loading = ref(false);
 const showFeedback = ref(false);
 
 // Computed properties
-const currentAp = computed(() => characterStore.currentAp);
-const canPerformAction = computed(() => characterStore.canPerformAction(props.apCost));
+const isAffordable = computed(() => props.currentAp >= props.apCost);
+const canPerformAction = computed(() => isAffordable.value && !props.disabled);
 
 const buttonColor = computed(() => {
   // If disabled, use a muted color
@@ -126,12 +121,8 @@ const executeAction = async () => {
   loading.value = true;
 
   try {
-    // Consume AP first (client-side for immediate feedback)
-    const apConsumed = characterStore.consumeAp(props.apCost);
-
-    if (!apConsumed) {
-      throw new Error('Failed to consume action points');
-    }
+    // Emit AP consumed event (for parent to handle)
+    emit('ap-consumed', props.apCost);
 
     // Show visual feedback
     triggerFeedback();
@@ -139,9 +130,7 @@ const executeAction = async () => {
     // Emit success event with action data
     emit('action-success', {
       type: props.actionType,
-      cost: props.apCost,
-      targetId: props.targetId,
-      data: props.actionData
+      cost: props.apCost
     });
   } catch (error) {
     console.error('Action execution failed:', error);
@@ -152,7 +141,9 @@ const executeAction = async () => {
       error
     });
   } finally {
-    loading.value = false;
+    setTimeout(() => {
+      loading.value = false;
+    }, 500); // Short delay for better visual feedback
   }
 };
 
@@ -164,21 +155,6 @@ const triggerFeedback = () => {
     showFeedback.value = false;
   }, 1500);
 };
-
-// Watch for AP changes to re-evaluate if action can be performed
-watch(() => characterStore.currentAp, (newValue) => {
-  // If AP changed and now we can perform the action, pulse the button
-  if (canPerformAction.value && !loading.value) {
-    // Add a temporary class for animation
-    const btn = document.querySelector('.action-btn');
-    if (btn) {
-      btn.classList.add('ap-enabled-pulse');
-      setTimeout(() => {
-        btn.classList.remove('ap-enabled-pulse');
-      }, 1000);
-    }
-  }
-});
 </script>
 
 <style scoped>
@@ -232,23 +208,6 @@ watch(() => characterStore.currentAp, (newValue) => {
   100% {
     opacity: 0;
     transform: translateY(-30px);
-  }
-}
-
-/* Animation for when AP becomes available */
-.ap-enabled-pulse {
-  animation: enabled-pulse 1s;
-}
-
-@keyframes enabled-pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(var(--md-accent-rgb), 0.7);
-  }
-  70% {
-    box-shadow: 0 0 0 10px rgba(var(--md-accent-rgb), 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(var(--md-accent-rgb), 0);
   }
 }
 

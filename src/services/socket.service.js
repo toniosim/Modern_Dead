@@ -111,9 +111,19 @@ class SocketService {
   }
 
   // Move to a new location
-  move(newLocation) {
+  moveCharacter(newLocation) {
     if (!this.socket || !this.connected || !this.authenticated) return;
-    this.socket.emit('move', { newLocation });
+    this.socket.emit('player_moved', { ...newLocation });
+  }
+
+  // Interact with a building
+  interactWithBuilding(buildingId, action, additionalData = {}) {
+    if (!this.socket || !this.connected || !this.authenticated) return;
+    this.socket.emit('building_interaction', {
+      buildingId,
+      action,
+      ...additionalData
+    });
   }
 
   // Register event listeners

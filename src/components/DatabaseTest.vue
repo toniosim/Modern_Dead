@@ -59,7 +59,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import axios from 'axios';
+import { api } from 'src/boot/axios';
 
 // Define interface for the database response
 interface DatabaseConnectionResponse {
@@ -70,7 +70,6 @@ interface DatabaseConnectionResponse {
   message?: string;
 }
 
-const API_URL = process.env.API_URL || 'http://localhost:3000/api';
 const loading = ref(false);
 const response = ref<DatabaseConnectionResponse | null>(null);
 const error = ref('');
@@ -81,13 +80,11 @@ const testDatabaseConnection = async () => {
   response.value = null;
 
   try {
-    const result = await axios.get(`${API_URL}/test/db-connection`);
+    const result = await api.get('/test/db-connection');
     response.value = result.data;
-  } catch (err) {
+  } catch (err: any) {
     console.error('Database connection test failed:', err);
-    error.value = err instanceof Error
-      ? err.message
-      : 'Failed to test database connection';
+    error.value = err?.response?.data?.message || err?.message || 'Failed to test database connection';
   } finally {
     loading.value = false;
   }

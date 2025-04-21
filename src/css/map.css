@@ -1,0 +1,184 @@
+/* Map-specific styling for Modern Dead */
+
+/* Map grid and cells */
+.map-grid {
+    border: 1px solid var(--md-accent);
+    background-color: var(--md-background);
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr 1fr;
+    gap: 2px;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.map-cell {
+    position: relative;
+    border: 1px solid var(--md-accent);
+    padding: 8px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-height: 80px;
+}
+
+.map-cell:hover {
+    background-color: var(--md-secondary);
+}
+
+/* Cell types */
+.map-cell.street {
+    background-color: var(--md-street);
+    color: var(--md-text);
+}
+
+.map-cell.building {
+    background-color: var(--md-card-background);
+    color: var(--md-text);
+}
+
+.map-cell.current {
+    background-color: var(--md-accent);
+    color: var(--md-background);
+    font-weight: bold;
+}
+
+.map-cell.empty {
+    background-color: #000;
+    color: #333;
+    cursor: default;
+}
+
+/* Building type colors */
+.map-cell.hospital {
+    background-color: var(--md-hospital);
+    color: var(--md-background);
+}
+
+.map-cell.police_department {
+    background-color: var(--md-police);
+    color: var(--md-background);
+}
+
+.map-cell.fire_station {
+    background-color: var(--md-negative);
+    color: var(--md-background);
+}
+
+.map-cell.necrotech {
+    background-color: var(--md-necrotech);
+    color: var(--md-background);
+}
+
+.map-cell.mall {
+    background-color: var(--md-mall);
+    color: var(--md-background);
+}
+
+.map-cell.church {
+    background-color: #ddd;
+    color: var(--md-background);
+}
+
+.map-cell.fort {
+    background-color: #964B00;
+    color: var(--md-background);
+}
+
+/* Building states */
+.map-cell.ransacked {
+    border: 2px dashed var(--md-negative);
+}
+
+.map-cell.ruined {
+    border: 2px solid var(--md-negative);
+}
+
+.map-cell.powered {
+    box-shadow: inset 0 0 10px var(--md-warning);
+}
+
+/* Cell content */
+.cell-content {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+/* Character indicator */
+.character-indicator {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background-color: var(--md-positive);
+    border-radius: 50%;
+    width: 12px;
+    height: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--md-background);
+}
+
+.zombie-indicator {
+    background-color: var(--md-negative);
+}
+
+/* Barricade indicators */
+.barricade-indicator {
+    position: absolute;
+    bottom: 2px;
+    left: 2px;
+    font-size: 0.7rem;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.barricade-light {
+    color: var(--md-warning);
+}
+
+.barricade-medium {
+    color: var(--md-positive);
+}
+
+.barricade-heavy {
+    color: var(--md-negative);
+}
+
+/* Movement controls */
+.movement-controls {
+    margin-top: 20px;
+    max-width: 300px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Building info */
+.building-info {
+    margin-top: 20px;
+}
+
+/* Mobile optimization */
+@media (max-width: 600px) {
+    .map-grid {
+        aspect-ratio: 1 / 1;
+        max-width: 100%;
+    }
+
+    .map-cell {
+        min-height: 60px;
+        padding: 4px;
+    }
+
+    .cell-content {
+        font-size: 1rem;
+    }
+}

@@ -114,34 +114,37 @@ io.on('connection', (socket) => {
 
   // Handle player movement
   socket.on('player_moved', (data) => {
-    // Check if user is authenticated
+    // Validate user is authenticated
     if (!socket.userId) {
       socket.emit('error', { message: 'Not authenticated' });
       return;
     }
 
+    // Notify players in both old and new locations
+    socket.to(`location:${socket.currentLocation}`).emit('player_left', {
+      username: socket.username
+    });
+
     // Leave old location room
     if (socket.currentLocation) {
       socket.leave(`location:${socket.currentLocation}`);
-
-      // Notify players in old location
-      socket.to(`location:${socket.currentLocation}`).emit('player_left', {
-        username: socket.username
-      });
     }
 
-    // Join new location room
-    socket.join(`location:${data.x},${data.y}`);
+    // Update current location
     socket.currentLocation = `${data.x},${data.y}`;
+    socket.join(`location:${socket.currentLocation}`);
 
-    // Notify players in new location
-    socket.to(`location:${data.x},${data.y}`).emit('player_joined', {
+    socket.to(`location:${socket.currentLocation}`).emit('player_joined', {
       username: socket.username,
-      character: data.character
+      character: {
+        ...data,
+        name: socket.username,
+        type: 'survivor' // This would come from the database normally
+      }
     });
   });
 
-  // Handle building interaction events
+  // Handle building interaction
   socket.on('building_interaction', (data) => {
     // Check if user is authenticated
     if (!socket.userId) {

@@ -13,6 +13,11 @@ const routes: RouteRecordRaw[] = [
         path: 'profile',
         component: () => import('pages/ProfilePage.vue'),
         meta: { requiresAuth: true }
+      },
+      {
+        path: 'game',
+        component: () => import('pages/GamePage.vue'),
+        meta: { requiresAuth: true }
       }
     ],
   },
@@ -40,8 +45,8 @@ const routes: RouteRecordRaw[] = [
     component: () => import('layouts/MainLayout.vue'),
     children: [
       { path: '', component: () => import('pages/GameUIDemoPage.vue') }
-      ],
-    meta: {requiresAuth: true }
+    ],
+    meta: { requiresAuth: false }
   },
 
   {

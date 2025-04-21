@@ -11,9 +11,11 @@ const socketio = require('socket.io');
 const jwt = require('jsonwebtoken');
 const testRoutes = require('./routes/test.routes');
 const authRoutes = require('./routes/auth.routes');
+const characterRoutes = require('./routes/character.routes');
+const mapRoutes = require('./routes/map.routes'); // Add map routes import
 const { errorHandler } = require('./middleware/error.middleware');
+const { databaseErrorHandler } = require('./middleware/database-error.middleware');
 const { checkJwtConfig } = require('./middleware/jwt-config.middleware');
-const socketService = require('./services/socket.service');
 
 // Import database connection
 const connectDB = require('./config/database');
@@ -23,7 +25,7 @@ const app = express();
 
 // Set up Socket.io
 const server = http.createServer(app);
-const io = socketService.initialize(server, {
+const io = socketio(server, {
   cors: {
     origin: process.env.CLIENT_URL || 'http://localhost:9000',
     methods: ['GET', 'POST'],
@@ -53,13 +55,11 @@ app.get('/', (req, res) => {
   res.json({ message: 'Welcome to Modern Dead API' });
 });
 
-// Character routes
-const characterRoutes = require('./routes/character.routes');
-app.use('/api/characters', characterRoutes);
-
 // API routes
 app.use('/api/test', testRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/characters', characterRoutes);
+app.use('/api/map', mapRoutes); // Add map routes
 
 // Socket.io connection handling
 io.on('connection', (socket) => {
@@ -88,7 +88,7 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Game-specific events
+  // Handle map-related events
   socket.on('join_location', (data) => {
     // Check if user is authenticated
     if (!socket.userId) {
@@ -102,95 +102,59 @@ io.on('connection', (socket) => {
     }
 
     // Join new location room
-    socket.join(`location:${data.locationId}`);
-    socket.currentLocation = data.locationId;
+    socket.join(`location:${data.x},${data.y}`);
+    socket.currentLocation = `${data.x},${data.y}`;
 
     // Notify other players in the same location
-    socket.to(`location:${data.locationId}`).emit('player_joined', {
+    socket.to(`location:${data.x},${data.y}`).emit('player_joined', {
       username: socket.username,
       // Include other player data here
     });
   });
 
-  // Handle player actions
-  socket.on('player_action', (data) => {
+  // Handle player movement
+  socket.on('player_moved', (data) => {
     // Check if user is authenticated
     if (!socket.userId) {
       socket.emit('error', { message: 'Not authenticated' });
       return;
     }
 
-    console.log(`Player action from ${socket.username}:`, data.action);
+    // Leave old location room
+    if (socket.currentLocation) {
+      socket.leave(`location:${socket.currentLocation}`);
 
-    // Process the action (you'll implement this later)
-    // ...
-
-    // Broadcast results to affected players
-    if (data.action === 'attack') {
-      // Notify the target player
-      io.to(`user:${data.targetId}`).emit('player_attacked', {
-        attacker: socket.username,
-        damage: data.damage
-      });
-
-      // Notify others in the same location
-      socket.to(`location:${socket.currentLocation}`).emit('combat_event', {
-        attacker: socket.username,
-        target: data.targetName,
-        action: 'attack'
+      // Notify players in old location
+      socket.to(`location:${socket.currentLocation}`).emit('player_left', {
+        username: socket.username
       });
     }
-  });
 
-  // Handle chat messages
-  socket.on('chat_message', (data) => {
-    // Validate user is authenticated
-    if (!socket.userId) {
-      socket.emit('error', { message: 'Not authenticated' });
-      return;
-    }
+    // Join new location room
+    socket.join(`location:${data.x},${data.y}`);
+    socket.currentLocation = `${data.x},${data.y}`;
 
-    // Determine message scope (local, radio, etc.)
-    if (data.scope === 'local') {
-      // Send to everyone in the same location
-      io.to(`location:${socket.currentLocation}`).emit('chat_message', {
-        username: socket.username,
-        message: data.message,
-        timestamp: new Date().toISOString()
-      });
-    } else if (data.scope === 'radio' && data.frequency) {
-      // Send to everyone tuned to the same radio frequency
-      io.to(`radio:${data.frequency}`).emit('radio_message', {
-        username: socket.username,
-        message: data.message,
-        frequency: data.frequency,
-        timestamp: new Date().toISOString()
-      });
-    }
-  });
-
-  // Handle player movement
-  socket.on('move', (data) => {
-    // Validate user is authenticated
-    if (!socket.userId) {
-      socket.emit('error', { message: 'Not authenticated' });
-      return;
-    }
-
-    // Handle player movement logic (will be implemented later)
-    // ...
-
-    // Notify players in both old and new locations
-    socket.to(`location:${socket.currentLocation}`).emit('player_left', {
-      username: socket.username
+    // Notify players in new location
+    socket.to(`location:${data.x},${data.y}`).emit('player_joined', {
+      username: socket.username,
+      character: data.character
     });
+  });
 
-    // Update current location
-    socket.currentLocation = data.newLocation;
-    socket.join(`location:${data.newLocation}`);
+  // Handle building interaction events
+  socket.on('building_interaction', (data) => {
+    // Check if user is authenticated
+    if (!socket.userId) {
+      socket.emit('error', { message: 'Not authenticated' });
+      return;
+    }
 
-    socket.to(`location:${data.newLocation}`).emit('player_joined', {
-      username: socket.username
+    // Notify other players in the same location
+    socket.to(`location:${socket.currentLocation}`).emit('building_updated', {
+      username: socket.username,
+      buildingId: data.buildingId,
+      action: data.action,
+      result: data.result
     });
   });
 
@@ -217,7 +181,8 @@ io.on('connection', (socket) => {
   });
 });
 
-// Global error handler
+// Error handlers
+app.use(databaseErrorHandler);
 app.use(errorHandler);
 
 // Start server

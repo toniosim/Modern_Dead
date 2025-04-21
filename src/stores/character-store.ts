@@ -3,6 +3,7 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { api } from 'src/boot/axios';
 export type ClassGroup = 'MILITARY' | 'CIVILIAN' | 'SCIENTIST' | 'ZOMBIE';
+export type CharacterUpdateData = Partial<Omit<Character, '_id'>> & { _id?: never };
 
 // Define character types
 export interface CharacterClass {
@@ -612,6 +613,19 @@ export const useCharacterStore = defineStore('character', () => {
     }
   }
 
+  function updateCharacterData(updatedData: CharacterUpdateData) {
+    if (!currentCharacter.value) return;
+
+    // Update current character with new data
+    currentCharacter.value = { ...currentCharacter.value, ...updatedData };
+
+    // Also update in the characters array
+    const index = characters.value.findIndex(c => c._id === currentCharacter.value?._id);
+    if (index !== -1 && characters.value[index]) {
+      characters.value[index] = { ...characters.value[index], ...updatedData };
+    }
+  }
+
   function updateApInfo(newApInfo: Partial<ApInfo>) {
     apInfo.value = {
       ...apInfo.value,
@@ -633,7 +647,7 @@ export const useCharacterStore = defineStore('character', () => {
     currentCharacter,
     loading,
     error,
-    classDefinitions,  // This was in the original store but not in the cutoff excerpt
+    classDefinitions,
 
     // AP-related state
     apInfo,
@@ -659,9 +673,8 @@ export const useCharacterStore = defineStore('character', () => {
     updateCharacterState,
     addSkill,
     deleteCharacter,
-
-    // Modified with AP support
     setActiveCharacter,
+    updateCharacterData,
 
     // New AP-related actions
     fetchApInfo,

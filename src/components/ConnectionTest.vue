@@ -37,9 +37,8 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import axios from 'axios';
+import { api } from 'src/boot/axios';
 
-const API_URL =  process.env.API_URL || 'http://localhost:3000/api';
 const loading = ref(false);
 const response = ref(null);
 const error = ref('');
@@ -50,13 +49,11 @@ const testConnection = async () => {
   response.value = null;
 
   try {
-    const result = await axios.get(`${API_URL}/test/ping`);
+    const result = await api.get('/test/ping');
     response.value = result.data;
-  } catch (err) {
+  } catch (err: any) {
     console.error('Connection test failed:', err);
-    error.value = err instanceof Error
-      ? err.message
-      : 'Failed to connect to the backend server';
+    error.value = err?.response?.data?.message || err?.message || 'Failed to connect to the backend server';
   } finally {
     loading.value = false;
   }

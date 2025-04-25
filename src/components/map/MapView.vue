@@ -628,9 +628,9 @@ watch(() => characterStore.getActiveCharacter, (newActiveCharacter) => {
 
 // Clean up socket listeners on component unmount
 onUnmounted(() => {
-  socketService.socket.off('player_joined');
-  socketService.socket.off('player_left');
-  socketService.socket.off('building_updated');
+  socketService.socket?.off('player_joined');
+  socketService.socket?.off('player_left');
+  socketService.socket?.off('building_updated');
 });
 </script>
 

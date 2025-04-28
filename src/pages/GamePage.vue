@@ -144,7 +144,7 @@ onMounted(async () => {
       await characterStore.fetchUserCharacters();
 
       // If characters exist, set the first one as active
-      if (characterStore.characters.length > 0) {
+      if (characterStore.characters.length > 0 && characterStore.characters[0]?._id) {
         characterStore.setActiveCharacter(characterStore.characters[0]._id);
       }
     } catch (error) {
@@ -169,7 +169,7 @@ function getClassName(character: Character) {
     if (classGroup in characterStore.classDefinitions) {
       const subClassDef = characterStore.classDefinitions[classGroup];
       if (character.subClass in subClassDef) {
-        return subClassDef[character.subClass].name || 'Unknown Class';
+        return subClassDef[character.subClass]?.name || 'Unknown Class';
       }
     }
   }

@@ -72,11 +72,11 @@
           <q-item-section>Play Game</q-item-section>
         </q-item>
 
-        <q-item v-if="userStore.isAuthenticated" clickable to="/map">
+        <q-item v-if="userStore.isAuthenticated" clickable to="/characters">
           <q-item-section avatar>
-            <q-icon name="map" />
+            <q-icon name="person" />
           </q-item-section>
-          <q-item-section>Map</q-item-section>
+          <q-item-section>Characters</q-item-section>
         </q-item>
 
         <q-item clickable to="/game-ui-demo">

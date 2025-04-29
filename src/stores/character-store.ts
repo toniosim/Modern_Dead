@@ -2,6 +2,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { api } from 'src/boot/axios';
+import socketService from "src/services/socket.service";
 export type ClassGroup = 'MILITARY' | 'CIVILIAN' | 'SCIENTIST' | 'ZOMBIE';
 export type CharacterUpdateData = Partial<Omit<Character, '_id'>> & { _id?: never };
 
@@ -599,12 +600,18 @@ export const useCharacterStore = defineStore('character', () => {
     if (character) {
       currentCharacter.value = character;
 
+      // Update socket service with selected character
+      socketService.selectCharacter(characterId);
+
       // Fetch AP info for active character
       await fetchApInfo();
 
       return character;
     } else {
       const fetchedCharacter = await getCharacter(characterId);
+
+      // Update socket service with selected character
+      socketService.selectCharacter(characterId);
 
       // Fetch AP info for active character
       await fetchApInfo();

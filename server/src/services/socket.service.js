@@ -72,47 +72,32 @@ const handleConnection = (socket) => {
   });
 
   // Handle character selection
-  socket.on('select_character', async (data) => {
+  socket.on('authenticate', (data) => {
     try {
-      const { characterId } = data;
-      const userId = socket.userId;
+      console.log('Socket authentication attempt:', {
+        tokenPresent: !!data.token,
+        characterId: data.characterId
+      });
 
-      if (!userId || !characterId) {
-        socket.emit('character_selection_error', { message: 'User ID and Character ID are required' });
-        return;
-      }
+      // Verify JWT token
+      const decoded = jwt.verify(data.token, process.env.JWT_SECRET);
 
-      // Leave previous character room if any
-      if (socket.characterId) {
-        socket.leave(`character:${socket.characterId}`);
+      console.log('Token decoded successfully:', decoded);
 
-        // Remove from active connections
-        if (activeConnections.has(userId)) {
-          activeConnections.get(userId).delete(socket.characterId);
-        }
-      }
+      // Associate user data with socket
+      socket.userId = decoded.userId;
+      socket.username = decoded.username;
 
-      // Update socket character ID
-      socket.characterId = characterId;
+      // Join user to their personal room
+      socket.join(`user:${decoded.userId}`);
 
-      // Add to active connections
-      if (!activeConnections.has(userId)) {
-        activeConnections.set(userId, new Map());
-      }
-      activeConnections.get(userId).set(characterId, socket);
+      console.log(`User authenticated: ${decoded.username}`);
 
-      // Join new character room
-      socket.join(`character:${characterId}`);
-
-      // Send initial AP update
-      await sendApUpdate(userId, characterId);
-
-      socket.emit('character_selection_success', { characterId });
-
-      console.log(`User ${userId} selected character ${characterId}`);
+      // Notify client of successful authentication
+      socket.emit('authenticated', { username: decoded.username });
     } catch (error) {
-      console.error('Character selection error:', error);
-      socket.emit('character_selection_error', { message: 'Failed to select character' });
+      console.error('Authentication failed:', error.message);
+      socket.emit('auth_error', { message: 'Authentication failed' });
     }
   });
 

@@ -44,52 +44,6 @@
       <q-btn color="primary" label="Retry" @click="loadMapData" class="q-mt-sm" />
     </div>
 
-    <!-- Movement Controls -->
-    <div class="movement-controls q-mb-md">
-      <div class="row q-col-gutter-sm justify-center">
-        <div class="col-12 text-center">
-          <q-btn
-            color="primary"
-            icon="north"
-            @click="move('north')"
-            :disable="!canMove('north') || characterStore.loading"
-          />
-        </div>
-        <div class="col text-right">
-          <q-btn
-            color="primary"
-            icon="west"
-            @click="move('west')"
-            :disable="!canMove('west') || characterStore.loading"
-          />
-        </div>
-        <div class="col text-center">
-          <q-btn
-            color="primary"
-            icon="home"
-            @click="enterOrExitBuilding()"
-            :disable="!canEnterOrExitBuilding() || characterStore.loading"
-          />
-        </div>
-        <div class="col text-left">
-          <q-btn
-            color="primary"
-            icon="east"
-            @click="move('east')"
-            :disable="!canMove('east') || characterStore.loading"
-          />
-        </div>
-        <div class="col-12 text-center">
-          <q-btn
-            color="primary"
-            icon="south"
-            @click="move('south')"
-            :disable="!canMove('south') || characterStore.loading"
-          />
-        </div>
-      </div>
-    </div>
-
     <!-- Building Information (if inside a building) -->
     <div v-if="isInsideBuilding" class="building-info q-mb-md">
       <q-card flat bordered>

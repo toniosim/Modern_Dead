@@ -69,7 +69,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useMapStore } from 'src/stores/map-store';
+import {MapCell, useMapStore} from 'src/stores/map-store';
 import {
   formatCoordinates,
   getBuildingIcon,
@@ -104,8 +104,8 @@ const adjacentBuildingCount = computed(() => {
 
   // Check the current position in the grid
   for (let y = 0; y < mapStore.mapArea.grid.length; y++) {
-    for (let x = 0; x < mapStore.mapArea.grid[y].length; x++) {
-      const cell = mapStore.mapArea.grid[y][x];
+    for (let x = 0; x < (mapStore.mapArea.grid[y]?.length || 0); x++) {
+      const cell = mapStore.mapArea?.grid?.[y]?.[x] as MapCell | undefined;
 
       // Skip if not adjacent to current cell or is the current cell
       if (!cell || !mapStore.currentCell) continue;

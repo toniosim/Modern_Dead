@@ -11,27 +11,25 @@
     </div>
 
     <!-- Map Grid -->
-    <div v-if="mapStore.mapArea" class="map-grid q-mb-md">
-      <div
-        v-for="(row, y) in mapStore.mapArea.grid"
-        :key="'row-' + y"
-        class="row no-wrap"
-      >
+    <div v-if="mapStore.mapArea" class="map-grid">
+      <!-- Loop through each cell in the grid -->
+      <template v-for="(row, rowIndex) in mapStore.mapArea.grid" :key="'row-' + rowIndex">
         <div
-          v-for="(cell, x) in row"
-          :key="`cell-${x}-${y}`"
-          class="map-cell col"
+          v-for="(cell, colIndex) in row"
+          :key="`cell-${rowIndex}-${colIndex}`"
+          class="map-cell"
           :class="getCellClasses(cell)"
           @click="handleCellClick(cell)"
         >
           <div class="cell-content">
             {{ getCellContent(cell) }}
           </div>
+
           <div v-if="hasCharacters(cell)" class="character-indicator">
             <q-icon name="people" size="xs" />
           </div>
         </div>
-      </div>
+      </template>
     </div>
 
     <!-- Loading State -->
@@ -44,52 +42,6 @@
     <div v-else-if="mapStore.error" class="text-negative q-pa-md">
       <div>{{ mapStore.error }}</div>
       <q-btn color="primary" label="Retry" @click="loadMapData" class="q-mt-sm" />
-    </div>
-
-    <!-- Movement Controls -->
-    <div class="movement-controls q-mb-md">
-      <div class="row q-col-gutter-sm justify-center">
-        <div class="col-12 text-center">
-          <q-btn
-            color="primary"
-            icon="north"
-            @click="move('north')"
-            :disable="!canMove('north') || characterStore.loading"
-          />
-        </div>
-        <div class="col text-right">
-          <q-btn
-            color="primary"
-            icon="west"
-            @click="move('west')"
-            :disable="!canMove('west') || characterStore.loading"
-          />
-        </div>
-        <div class="col text-center">
-          <q-btn
-            color="primary"
-            icon="home"
-            @click="enterOrExitBuilding()"
-            :disable="!canEnterOrExitBuilding() || characterStore.loading"
-          />
-        </div>
-        <div class="col text-left">
-          <q-btn
-            color="primary"
-            icon="east"
-            @click="move('east')"
-            :disable="!canMove('east') || characterStore.loading"
-          />
-        </div>
-        <div class="col-12 text-center">
-          <q-btn
-            color="primary"
-            icon="south"
-            @click="move('south')"
-            :disable="!canMove('south') || characterStore.loading"
-          />
-        </div>
-      </div>
     </div>
 
     <!-- Building Information (if inside a building) -->
@@ -641,18 +593,29 @@ onUnmounted(() => {
 }
 
 .map-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 2px;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  max-width: 400px;
+  margin: 0 auto;
   border: 1px solid var(--md-accent);
   background-color: var(--md-background);
 }
 
 .map-cell {
   position: relative;
-  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border: 1px solid var(--md-accent);
-  padding: 8px;
+  padding: 4px;
   text-align: center;
   cursor: pointer;
   transition: all 0.2s ease;
+  min-height: 33%;
 }
 
 .map-cell:hover {

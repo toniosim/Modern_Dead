@@ -1,4 +1,4 @@
-// server/src/models/character.model.js
+// server/src/models/.js
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 const { CHARACTER_CLASSES, SKILLS, getRandomSpawnLocation } = require('../utils/character-classes.util');

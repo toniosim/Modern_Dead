@@ -1,7 +1,7 @@
 // src/services/socket.service.js
 import { io } from 'socket.io-client';
 import { environment } from 'src/config/environment';
-import { useUserStore } from 'src/stores/user-store';
+import { useCharacterStore } from 'src/stores/character-store';
 
 class SocketService {
   constructor() {
@@ -76,9 +76,15 @@ class SocketService {
     if (!this.socket || !this.connected) return;
 
     // Get character ID if available
-    const { useCharacterStore } = require('src/stores/character-store');
     const characterStore = useCharacterStore();
-    const characterId = characterStore.currentCharacter?._id;
+    const activeCharacter = characterStore.getActiveCharacter;
+    const characterId = activeCharacter?._id;
+
+    console.log('Attempting socket authentication with:', {
+      tokenPresent: !!token,
+      characterId,
+      hasActiveCharacter: !!activeCharacter
+    });
 
     // Send both token and character ID
     this.socket.emit('authenticate', {
@@ -154,12 +160,11 @@ class SocketService {
 
     try {
       // Import here to avoid circular dependencies
-      const { useCharacterStore } = require('src/stores/character-store');
       const characterStore = useCharacterStore();
 
       // Update AP info in store if it's the current character
-      if (characterStore.currentCharacter &&
-        characterStore.currentCharacter._id === data.characterId) {
+      if (characterStore.getActiveCharacter &&
+        characterStore.getActiveCharacter._id === data.characterId) {
         characterStore.updateApInfo(data.ap);
       }
     } catch (error) {
@@ -184,6 +189,8 @@ class SocketService {
 // Add method to select active character
   selectCharacter(characterId) {
     if (!this.socket || !this.connected || !this.authenticated) return;
+
+    console.log('Selecting character:', characterId);
     this.socket.emit('select_character', { characterId });
   }
 }

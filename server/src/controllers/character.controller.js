@@ -168,6 +168,46 @@ exports.addSkill = async (req, res, next) => {
   }
 };
 
+// Get character AP information
+exports.getCharacterAP = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.userId;
+
+    // Find character
+    const character = await Character.findOne({
+      _id: id,
+      user: userId
+    });
+
+    if (!character) {
+      return res.status(404).json({ message: 'Character not found' });
+    }
+
+    // Get AP service
+    const apService = require('../services/ap.service');
+
+    // Update AP based on time elapsed
+    await apService.calculateAvailableAp(character, true);
+
+    // Get time until next AP
+    const nextApInfo = await apService.getTimeUntilNextAp(character);
+
+    // Return AP information
+    res.json({
+      success: true,
+      ap: {
+        current: character.actions.availableActions,
+        max: character.actions.maxActions,
+        regenerationRate: character.actions.regenerationRate + (character.actions.bonusRegeneration || 0),
+        nextApIn: nextApInfo
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Delete a character
 exports.deleteCharacter = async (req, res, next) => {
   try {

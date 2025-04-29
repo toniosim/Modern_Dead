@@ -10,7 +10,7 @@ export interface MapCell {
   x: number;
   y: number;
   type: 'street' | 'building';
-  building?: string;
+  building?: Building | null;
   suburb?: string;
   isPassable: boolean;
   properties?: Record<string, any>;

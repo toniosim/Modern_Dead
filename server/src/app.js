@@ -59,21 +59,31 @@ app.get('/', (req, res) => {
 app.use('/api/test', testRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/characters', characterRoutes);
-app.use('/api/map', mapRoutes); // Add map routes
+app.use('/api/map', mapRoutes);
 
 // Socket.io connection handling
 io.on('connection', (socket) => {
   console.log('A user connected:', socket.id);
 
   // Handle authentication
-  socket.on('authenticate', (token) => {
+  socket.on('authenticate', (data) => {
     try {
-      // Verify JWT token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      console.log('Socket authentication attempt:', {
+        tokenPresent: !!data.token,
+        characterId: data.characterId
+      });
+
+      // Verify JWT token - this is the critical part
+      const decoded = jwt.verify(data.token, process.env.JWT_SECRET);
 
       // Associate user data with socket
       socket.userId = decoded.userId;
       socket.username = decoded.username;
+
+      // Add characterId if provided
+      if (data.characterId) {
+        socket.characterId = data.characterId;
+      }
 
       // Join user to their personal room
       socket.join(`user:${decoded.userId}`);
@@ -81,7 +91,10 @@ io.on('connection', (socket) => {
       console.log(`User authenticated: ${decoded.username}`);
 
       // Notify client of successful authentication
-      socket.emit('authenticated', { username: decoded.username });
+      socket.emit('authenticated', {
+        username: decoded.username,
+        characterId: socket.characterId
+      });
     } catch (error) {
       console.error('Authentication failed:', error.message);
       socket.emit('auth_error', { message: 'Authentication failed' });

@@ -135,7 +135,7 @@ const characterStore = useCharacterStore();
 // Computed properties
 const currentBuildingName = computed(() => {
   if (mapStore.currentCell?.type === 'building' && mapStore.currentCell?.building) {
-    const buildingId = mapStore.currentCell.building;
+    const buildingId = mapStore.currentCell.building._id;
 
     // If we have building details loaded
     if (mapStore.currentBuilding?._id === buildingId) {
@@ -193,7 +193,7 @@ function getCellClasses(cell: MapCell | null) {
   if (cell.type === 'building' && cell.building) {
     // Add specific classes based on building type
     // This would need to be expanded based on actual data
-    if (mapStore.currentBuilding && mapStore.currentBuilding._id === cell.building) {
+    if (mapStore.currentBuilding && mapStore.currentBuilding._id === cell.building._id) {
       classes.push(mapStore.currentBuilding.type.toLowerCase());
     }
   }
@@ -366,7 +366,7 @@ function enterOrExitBuilding() {
 
           // Load building details
           if (cell.building) {
-            mapStore.getBuilding(cell.building);
+            mapStore.getBuilding(cell.building._id);
           }
         }).catch(error => {
           console.error('Enter building failed:', error);
@@ -460,7 +460,7 @@ function interactWithBuilding(action: string) {
   const activeCharacter = characterStore.getActiveCharacter;
   if (!isInsideBuilding.value || !activeCharacter || !mapStore.currentCell?.building) return;
 
-  const buildingId = mapStore.currentCell.building;
+  const buildingId = mapStore.currentCell.building._id;
 
   mapStore.interactWithBuilding(
     activeCharacter._id,
@@ -492,7 +492,7 @@ function handleCellClick(cell: MapCell | null) {
     cell.y === mapStore.currentCell.y) {
     // If we're in a building, load building details
     if (cell.type === 'building' && cell.building) {
-      mapStore.getBuilding(cell.building);
+      mapStore.getBuilding(cell.building._id);
     }
     return;
   }
@@ -513,7 +513,7 @@ function handleCellClick(cell: MapCell | null) {
 
       // If we're moving to a building, load building details
       if (cell.type === 'building' && cell.building) {
-        mapStore.getBuilding(cell.building);
+        mapStore.getBuilding(cell.building._id);
       }
     }).catch(error => {
       console.error('Movement failed:', error);
@@ -528,7 +528,7 @@ function loadMapData() {
   mapStore.loadMapArea(characterStore.getActiveCharacter._id).then(() => {
     // If we're in a building, load building details
     if (mapStore.currentCell?.type === 'building' && mapStore.currentCell?.building) {
-      mapStore.getBuilding(mapStore.currentCell.building);
+      mapStore.getBuilding(mapStore.currentCell.building._id);
     }
 
     // Join location room for real-time updates

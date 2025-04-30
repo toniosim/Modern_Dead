@@ -99,8 +99,11 @@ const characterSchema = new Schema({
       type: Number,
       default: 50,
       min: 0,
-      max: function() {
-        return this.maxActions || 50;
+      validate: {
+        validator: function(value) {
+          return value <= (this.maxActions || 50);
+        },
+        message: props => `${props.value} exceeds maximum AP capacity (${props.maxActions || 50})`
       }
     },
     lastActionTime: {

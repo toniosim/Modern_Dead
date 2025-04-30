@@ -93,6 +93,9 @@ exports.moveCharacter = async (req, res, next) => {
       return res.status(400).json({ message: 'Invalid coordinates' });
     }
 
+    // Log request info
+    console.log(`Move request for character ${characterId} to [${x}, ${y}]`);
+
     // Get character
     const character = await Character.findOne({
       _id: characterId,

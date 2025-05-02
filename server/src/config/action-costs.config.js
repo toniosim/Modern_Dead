@@ -8,8 +8,8 @@
 const BASE_COSTS = {
   // Movement
   MOVE: 0,
-  ENTER_BUILDING: 1,
-  EXIT_BUILDING: 1,
+  ENTER_BUILDING: 0,
+  EXIT_BUILDING: 0,
 
   // Combat
   ATTACK: 2,

@@ -3,6 +3,7 @@ const Building = require('../models/building.model');
 const Character = require('../models/character.model');
 const Suburb = require('../models/suburb.model');
 const { populateQuery } = require('../utils/population.util');
+const actionCosts = require('../config/action-costs.config');
 
 class MovementService {
   /**
@@ -232,7 +233,7 @@ class MovementService {
     }
 
     // Calculate AP cost
-    let apCost = 1; // Standard cost is 1 AP
+    let apCost = actionCosts.getBaseCost('MOVE'); // Standard cost is 1 AP
 
     // Zombies without Lurching Gait move at half speed
     if (character.type === 'zombie') {

@@ -60,6 +60,11 @@ app.use('/api/test', testRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/characters', characterRoutes);
 app.use('/api/map', mapRoutes);
+// debug routes
+const debugRoutes = require('./routes/debug.routes');
+if (process.env.NODE_ENV !== 'production') {
+  app.use('/api/debug', debugRoutes);
+}
 
 // Socket.io connection handling
 io.on('connection', (socket) => {

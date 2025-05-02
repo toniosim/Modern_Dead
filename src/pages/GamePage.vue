@@ -125,16 +125,37 @@
       <p class="text-grey-7">Please select or create a character to play.</p>
       <q-btn label="Character List" color="primary" to="/characters" class="q-mt-sm" />
     </div>
+
+    <!-- Debug Button -->
+    <q-page-sticky position="bottom-right" :offset="[20, 20]">
+      <q-btn
+        v-if="isDevelopment"
+        round
+        color="warning"
+        icon="bug_report"
+        @click="showDebug = !showDebug"
+      >
+        <q-tooltip>Debug Tools</q-tooltip>
+      </q-btn>
+    </q-page-sticky>
+
+    <!-- debug panel that pops out -->
+    <q-dialog v-model="showDebug" position="right">
+      <debug-panel @close="showDebug = false" />
+    </q-dialog>
+
   </q-page>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useCharacterStore, type Character, ClassGroup } from 'src/stores/character-store';
 import MapView from 'components/map/MapView.vue';
 import MapInfo from 'components/map/MapInfo.vue';
+import DebugPanel from 'components/debug/DebugPanel.vue';
 
 const characterStore = useCharacterStore();
+const showDebug = ref(false);
 
 // Load active character if available
 onMounted(async () => {
@@ -160,6 +181,11 @@ const activeSkills = computed(() => {
   return characterStore.getActiveCharacter.skills
     .filter(skill => skill.active)
     .slice(0, 5); // Show only the first 5 active skills
+});
+
+// Check if the app is in development mode
+const isDevelopment = computed(() => {
+  return process.env.NODE_ENV !== 'production';
 });
 
 // Helper methods

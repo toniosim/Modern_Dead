@@ -92,34 +92,6 @@
         </q-card-section>
       </q-card>
     </div>
-
-    <!-- Characters at Location -->
-    <div v-if="mapStore.charactersAtCurrentLocation.length > 0" class="characters-at-location q-mb-md">
-      <q-card flat bordered>
-        <q-card-section>
-          <div class="text-subtitle1">Characters Here:</div>
-          <q-list dense>
-            <q-item v-for="character in mapStore.charactersAtCurrentLocation" :key="character.id">
-              <q-item-section>
-                <q-item-label>
-                  {{ character.name }}
-                  <q-badge
-                    :color="character.type === 'survivor' ? 'positive' : 'negative'"
-                    class="q-ml-sm"
-                  >
-                    {{ character.type }}
-                  </q-badge>
-                  <span v-if="character.isCurrentCharacter" class="text-italic q-ml-sm">(You)</span>
-                </q-item-label>
-                <q-item-label v-if="character.type === 'survivor'" caption>
-                  HP: {{ character.health.current }}/{{ character.health.max }}
-                </q-item-label>
-              </q-item-section>
-            </q-item>
-          </q-list>
-        </q-card-section>
-      </q-card>
-    </div>
   </div>
 </template>
 

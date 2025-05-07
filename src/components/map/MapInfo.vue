@@ -52,6 +52,9 @@
               class="character-item flex justify-between q-py-xs"
             >
               <span>{{ char.name }}</span>
+              <q-item-label v-if="char.type === 'survivor'">
+                HP: {{ char.health.current }}/{{ char.health.max }}
+              </q-item-label>
               <q-badge :color="char.type === 'survivor' ? 'positive' : 'negative'">
                 {{ char.type }}
               </q-badge>

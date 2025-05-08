@@ -44,14 +44,38 @@
       <q-btn color="primary" label="Retry" @click="loadMapData" class="q-mt-sm" />
     </div>
 
-    <!-- Building Information (if inside a building) -->
-    <div v-if="isInsideBuilding" class="building-info q-mb-md">
+    <!-- Building Options (if at a building) -->
+    <div v-if="isAtBuilding" class="building-options q-mt-md">
       <q-card flat bordered>
         <q-card-section>
           <div class="text-subtitle1">{{ currentBuildingName }}</div>
           <div class="text-caption">{{ getBuildingStatusDescription() }}</div>
 
+          <!-- Enter/Exit Building Button -->
           <div class="q-mt-sm">
+            <q-btn
+              v-if="!isInsideBuilding"
+              color="primary"
+              label="Enter Building"
+              icon="login"
+              class="q-mr-sm"
+              @click="enterBuilding"
+              :disable="!canEnterBuilding || characterStore.loading"
+            />
+            <q-btn
+              v-else
+              color="primary"
+              label="Exit Building"
+              icon="logout"
+              class="q-mr-sm"
+              @click="exitBuilding"
+              :disable="!canExitBuilding || characterStore.loading"
+            />
+          </div>
+
+          <!-- Building Actions (if inside) -->
+          <div v-if="isInsideBuilding" class="q-mt-sm">
+            <div class="text-subtitle2 q-mb-xs">Building Actions</div>
             <q-btn
               v-if="canBarricade()"
               color="positive"
@@ -121,16 +145,128 @@ const currentBuildingName = computed(() => {
   return null;
 });
 
-const isInsideBuilding = computed(() => {
-  return mapStore.currentCell?.type === 'building' && !!mapStore.currentCell?.building;
+const isAtBuilding = computed(() => {
+  return mapStore.currentCell?.type === 'building' &&
+    mapStore.currentCell?.building !== undefined;
 });
+
+const isInsideBuilding = computed(() => {
+  return characterStore.getActiveCharacter?.location.isInside || false;
+});
+
+const canEnterBuilding = computed(() => {
+  // Logic to check if character can enter (could also call an API)
+  if (!isAtBuilding.value || isInsideBuilding.value) {
+    return false;
+  }
+
+  const character = characterStore.getActiveCharacter;
+  const building = mapStore.currentBuilding;
+
+  if (!character || !building) {
+    return false;
+  }
+
+  // Check barricades for zombies
+  if (building.barricadeLevel > 0 && character.type === 'zombie') {
+    return false;
+  }
+
+  // Check heavy barricades for survivors without Free Running
+  if (building.barricadeLevel >= 60 && character.type === 'survivor') {
+    const hasFreeFunning = character.skills.some(
+      skill => skill.name === 'Free Running' && skill.active
+    );
+    if (!hasFreeFunning) {
+      return false;
+    }
+  }
+
+  // Check closed doors for zombies without Memories of Life
+  if (!building.doorsOpen && character.type === 'zombie') {
+    const hasMemoriesOfLife = character.skills.some(
+      skill => skill.name === 'Memories of Life' && skill.active
+    );
+    if (!hasMemoriesOfLife) {
+      return false;
+    }
+  }
+
+  return character.actions.availableActions >= 1; // Check AP
+});
+
+const canExitBuilding = computed(() => {
+  if (!isAtBuilding.value || !isInsideBuilding.value) {
+    return false;
+  }
+
+  const character = characterStore.getActiveCharacter;
+  const building = mapStore.currentBuilding;
+
+  if (!character || !building) {
+    return false;
+  }
+
+  // Check very heavy barricades for survivors without Free Running
+  if (building.barricadeLevel >= 80 && character.type === 'survivor') {
+    const hasFreeFunning = character.skills.some(
+      skill => skill.name === 'Free Running' && skill.active
+    );
+    if (!hasFreeFunning) {
+      return false;
+    }
+  }
+
+  return character.actions.availableActions >= 1; // Check AP
+});
+
+// Methods for entering/exiting buildings
+async function enterBuilding() {
+  const activeCharacter = characterStore.getActiveCharacter;
+  if (!isAtBuilding.value || !activeCharacter) return;
+
+  try {
+    await mapStore.enterBuilding(activeCharacter._id)
+      .then(() => {
+        // Socket event for real-time updates
+        socketService.socket?.emit('building_interaction', {
+          characterId: activeCharacter._id,
+          action: 'enterBuilding'
+        });
+      })
+
+  } catch (error) {
+    console.error('Failed to enter building:', error);
+  }
+}
+
+async function exitBuilding() {
+  const activeCharacter = characterStore.getActiveCharacter;
+  if (!isAtBuilding.value || !activeCharacter) return;
+
+  try {
+    await mapStore.exitBuilding(activeCharacter._id)
+      .then(() => {
+        // Socket event for real-time updates
+        socketService.socket?.emit('building_interaction', {
+          characterId: activeCharacter._id,
+          action: 'exitBuilding'
+        });
+      });
+
+  } catch (error) {
+    console.error('Failed to exit building:', error);
+  }
+}
 
 // Helper methods
 function getLocationDescription() {
   if (!mapStore.currentCell) return '';
 
   if (mapStore.currentCell.type === 'building' && mapStore.currentCell.building) {
-    return `Inside ${currentBuildingName.value || 'a building'}`;
+    return isInsideBuilding.value ?
+      `Inside ${currentBuildingName.value || 'a building'}` :
+      `Outside ${currentBuildingName.value || 'a building'}`;
   } else {
     return 'On the street';
   }
@@ -249,104 +385,6 @@ function move(direction: 'north' | 'east' | 'south' | 'west') {
   }).catch(error => {
     console.error('Movement failed:', error);
   });
-}
-
-function canEnterOrExitBuilding() {
-  if (!mapStore.currentCell) return false;
-
-  // If we're on a street with an adjacent building
-  if (mapStore.currentCell.type === 'street') {
-    // Check for adjacent buildings
-    const { x, y } = mapStore.currentCell;
-    const adjacentCells = [
-      mapStore.getCellAt(x, y - 1), // North
-      mapStore.getCellAt(x + 1, y), // East
-      mapStore.getCellAt(x, y + 1), // South
-      mapStore.getCellAt(x - 1, y)  // West
-    ];
-
-    return adjacentCells.some(cell => cell?.type === 'building');
-  }
-
-  // If we're in a building, we can always try to exit
-  return mapStore.currentCell.type === 'building';
-}
-
-function enterOrExitBuilding() {
-  const activeCharacter = characterStore.getActiveCharacter;
-  if (!mapStore.currentCell || !activeCharacter) return;
-
-  const { x, y } = mapStore.currentCell;
-
-  // If we're in a building, try to exit to the street
-  if (mapStore.currentCell.type === 'building') {
-    // Look for adjacent street spaces
-    const adjacentCells = [
-      { x: x, y: y - 1, dir: 'north' }, // North
-      { x: x + 1, y: y, dir: 'east' },  // East
-      { x: x, y: y + 1, dir: 'south' }, // South
-      { x: x - 1, y: y, dir: 'west' }   // West
-    ];
-
-    for (const pos of adjacentCells) {
-      const cell = mapStore.getCellAt(pos.x, pos.y);
-      if (cell && cell.type === 'street') {
-        // Move to the first adjacent street
-        mapStore.moveCharacter(
-          activeCharacter._id,
-          pos.x,
-          pos.y
-        ).then(() => {
-          // Emit socket event for real-time updates
-          socketService.moveCharacter({
-            characterId: activeCharacter._id,
-            x: pos.x,
-            y: pos.y
-          });
-        }).catch(error => {
-          console.error('Exit building failed:', error);
-        });
-        return;
-      }
-    }
-  }
-  // If we're on a street, try to enter an adjacent building
-  else if (mapStore.currentCell.type === 'street') {
-    // Look for adjacent buildings
-    const adjacentCells = [
-      { x: x, y: y - 1, dir: 'north' }, // North
-      { x: x + 1, y: y, dir: 'east' },  // East
-      { x: x, y: y + 1, dir: 'south' }, // South
-      { x: x - 1, y: y, dir: 'west' }   // West
-    ];
-
-    for (const pos of adjacentCells) {
-      const cell = mapStore.getCellAt(pos.x, pos.y);
-      if (cell && cell.type === 'building') {
-        // Move to the first adjacent building
-        mapStore.moveCharacter(
-          activeCharacter._id,
-          pos.x,
-          pos.y
-        ).then(() => {
-          // Emit socket event for real-time updates
-          socketService.moveCharacter({
-            characterId: activeCharacter._id,
-            x: pos.x,
-            y: pos.y
-          });
-
-          // Load building details
-          if (cell.building) {
-            mapStore.getBuilding(cell.building._id);
-          }
-        }).catch(error => {
-          console.error('Enter building failed:', error);
-        });
-        return;
-      }
-    }
-  }
 }
 
 // Building interaction methods

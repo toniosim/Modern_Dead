@@ -14,7 +14,7 @@
         </div>
 
         <!-- Building Info (if in a building) -->
-        <div v-if="isInBuilding" class="building-info q-mb-sm">
+        <div v-if="isInsideBuilding" class="building-info q-mb-sm">
           <div class="text-weight-bold q-mb-xs">
             <q-icon :name="getBuildingIcon(currentBuilding.type)" size="sm" class="q-mr-xs" />
             {{ currentBuilding.name }}
@@ -79,15 +79,21 @@ import {
   formatBuildingType,
   getBarricadeStatus
 } from 'src/utils/map-utils';
+import { useCharacterStore } from 'src/stores/character-store';
 
 const mapStore = useMapStore();
+const characterStore = useCharacterStore();
 
 // Computed properties
-const isInBuilding = computed(() => {
+const isAtBuilding = computed(() => {
   return mapStore.currentCell?.type === 'building' &&
-    mapStore.currentCell?.building !== undefined &&
-    mapStore.currentBuilding !== null;
+    mapStore.currentCell?.building !== undefined;
 });
+
+const isInsideBuilding = computed(() => {
+  return characterStore.getActiveCharacter?.location.isInside || false;
+});
+
 
 const currentBuilding = computed(() => {
   return mapStore.currentBuilding || {

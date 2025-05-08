@@ -94,7 +94,7 @@
               </div>
 
               <div class="text-right q-mt-sm">
-                <q-btn color="primary" label="View All Skills" flat size="sm" to="/skills" />
+                <q-btn label="View All Skills" flat size="sm" to="/skills" />
               </div>
             </q-card-section>
 

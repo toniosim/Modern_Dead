@@ -130,6 +130,22 @@ io.on('connection', (socket) => {
     });
   });
 
+  // Handle building entry/exit
+  socket.on('building_interaction', (data) => {
+    // Check if user is authenticated
+    if (!socket.userId) {
+      socket.emit('error', { message: 'Not authenticated' });
+      return;
+    }
+
+    // Notify other players in the same location
+    socket.to(`location:${socket.currentLocation}`).emit('building_updated', {
+      username: socket.username,
+      action: data.action,
+      characterId: data.characterId
+    });
+  });
+
   // Handle player movement
   socket.on('player_moved', (data) => {
     // Validate user is authenticated

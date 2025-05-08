@@ -18,4 +18,10 @@ router.get('/building/:buildingId', mapController.getBuilding);
 // Interact with a building
 router.post('/interact/:characterId/:buildingId', mapController.interactWithBuilding);
 
+// Enter building
+router.post('/enter-building/:characterId', mapController.enterBuilding);
+
+// Exit building
+router.post('/exit-building/:characterId', mapController.exitBuilding);
+
 module.exports = router;

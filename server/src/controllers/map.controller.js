@@ -145,6 +145,128 @@ exports.moveCharacter = async (req, res, next) => {
 };
 
 /**
+ * Enter a building
+ */
+exports.enterBuilding = async (req, res, next) => {
+  try {
+    const { characterId } = req.params;
+
+    // Get character
+    const character = await Character.findOne({
+      _id: characterId,
+      user: req.user.userId
+    });
+
+    if (!character) {
+      return res.status(404).json({ message: 'Character not found' });
+    }
+
+    // Check AP (costs 1 AP to enter a building)
+    if (character.actions.availableActions < 1) {
+      return res.status(400).json({ message: 'Not enough action points' });
+    }
+
+    // Check if character can enter building
+    const canEnter = await movementService.canEnterBuilding(character);
+    if (!canEnter.valid) {
+      return res.status(400).json({ message: canEnter.reason });
+    }
+
+    // Enter the building
+    const updatedCharacter = await movementService.enterBuilding(character);
+
+    // Deduct AP
+    updatedCharacter.actions.availableActions -= 1;
+    updatedCharacter.actions.lastActionTime = new Date();
+    await updatedCharacter.save();
+
+    // Get updated map area
+    const mapArea = await movementService.getVisibleArea(
+      updatedCharacter.location.x,
+      updatedCharacter.location.y,
+      'standard'
+    );
+
+    // Return updated character and map area
+    res.json({
+      message: 'Entered building',
+      character: {
+        id: updatedCharacter._id,
+        name: updatedCharacter.name,
+        type: updatedCharacter.type,
+        location: updatedCharacter.location,
+        health: updatedCharacter.health,
+        actions: updatedCharacter.actions
+      },
+      mapArea
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Exit a building
+ */
+exports.exitBuilding = async (req, res, next) => {
+  try {
+    const { characterId } = req.params;
+
+    // Get character
+    const character = await Character.findOne({
+      _id: characterId,
+      user: req.user.userId
+    });
+
+    if (!character) {
+      return res.status(404).json({ message: 'Character not found' });
+    }
+
+    // Check AP (costs 1 AP to exit a building)
+    if (character.actions.availableActions < 1) {
+      return res.status(400).json({ message: 'Not enough action points' });
+    }
+
+    // Check if character can exit building
+    const canExit = await movementService.canExitBuilding(character);
+    if (!canExit.valid) {
+      return res.status(400).json({ message: canExit.reason });
+    }
+
+    // Exit the building
+    const updatedCharacter = await movementService.exitBuilding(character);
+
+    // Deduct AP
+    updatedCharacter.actions.availableActions -= 1;
+    updatedCharacter.actions.lastActionTime = new Date();
+    await updatedCharacter.save();
+
+    // Get updated map area
+    const mapArea = await movementService.getVisibleArea(
+      updatedCharacter.location.x,
+      updatedCharacter.location.y,
+      'standard'
+    );
+
+    // Return updated character and map area
+    res.json({
+      message: 'Exited building',
+      character: {
+        id: updatedCharacter._id,
+        name: updatedCharacter.name,
+        type: updatedCharacter.type,
+        location: updatedCharacter.location,
+        health: updatedCharacter.health,
+        actions: updatedCharacter.actions
+      },
+      mapArea
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
  * Get building details
  */
 exports.getBuilding = async (req, res, next) => {

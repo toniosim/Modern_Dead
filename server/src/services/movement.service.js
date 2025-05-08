@@ -293,11 +293,11 @@ class MovementService {
     if (targetCell.suburb) {
       let areaName = targetCell.suburb.name;
 
-      // Add building name if inside a building
+      // Add building name if at a building
       if (targetCell.type === 'building' && targetCell.building) {
         const building = await Building.findById(targetCell.building);
         if (building) {
-          areaName += ` - ${building.name}`;
+          areaName += ` - ${building.name} (Outside)`;
         }
       } else {
         areaName += ' - Street';
@@ -314,6 +314,197 @@ class MovementService {
     await character.save();
 
     return character;
+  }
+
+  /**
+   * Enter a building the character is already at
+   * @param {Object} character - Character document
+   * @returns {Promise<Object>} Updated character
+   */
+  async enterBuilding(character) {
+    // Verify character is at a building
+    if (!character.location.buildingId) {
+      throw new Error('No building to enter');
+    }
+
+    // Verify character is not already inside
+    if (character.location.isInside) {
+      throw new Error('Already inside the building');
+    }
+
+    // Get building
+    const building = await Building.findById(character.location.buildingId);
+    if (!building) {
+      throw new Error('Building not found');
+    }
+
+    // Check if the building can be entered
+    if (building.barricadeLevel > 0) {
+      // Barricade checks
+      if (character.type === 'zombie') {
+        throw new Error('Zombies cannot enter barricaded buildings');
+      }
+
+      if (building.barricadeLevel >= 60) {
+        // "Heavily barricaded" or higher
+        const hasFreeFunning = character.skills.some(skill =>
+          skill.name === 'Free Running' && skill.active
+        );
+
+        if (!hasFreeFunning) {
+          throw new Error('Building is too heavily barricaded to enter without Free Running');
+        }
+      }
+    } else if (!building.doorsOpen) {
+      // Closed doors checks
+      if (character.type === 'zombie') {
+        const hasMemoriesOfLife = character.skills.some(skill =>
+          skill.name === 'Memories of Life' && skill.active
+        );
+
+        if (!hasMemoriesOfLife) {
+          throw new Error('Doors are closed and cannot be opened without Memories of Life');
+        }
+      }
+    }
+
+    // Enter the building
+    character.location.isInside = true;
+
+    // Update area name
+    if (character.location.areaName && building) {
+      character.location.areaName = character.location.areaName.replace('(Outside)', '(Inside)');
+    }
+
+    // Save and return updated character
+    await character.save();
+    return character;
+  }
+
+  /**
+   * Exit a building the character is in
+   * @param {Object} character - Character document
+   * @returns {Promise<Object>} Updated character
+   */
+  async exitBuilding(character) {
+    // Verify character is inside a building
+    if (!character.location.buildingId || !character.location.isInside) {
+      throw new Error('Not inside a building');
+    }
+
+    // Get building
+    const building = await Building.findById(character.location.buildingId);
+    if (!building) {
+      throw new Error('Building not found');
+    }
+
+    // Check if the building can be exited
+    if (building.barricadeLevel >= 80) {
+      // Very heavily or extremely heavily barricaded
+      if (character.type === 'survivor') {
+        const hasFreeFunning = character.skills.some(skill =>
+          skill.name === 'Free Running' && skill.active
+        );
+
+        if (!hasFreeFunning) {
+          throw new Error('Building is too heavily barricaded to exit without Free Running');
+        }
+      }
+    }
+
+    // Exit the building
+    character.location.isInside = false;
+
+    // Update area name
+    if (character.location.areaName && building) {
+      character.location.areaName = character.location.areaName.replace('(Inside)', '(Outside)');
+    }
+
+    // Save and return updated character
+    await character.save();
+    return character;
+  }
+
+  /**
+   * Check if character can enter a building
+   * @param {Object} character - Character document
+   * @returns {Promise<Object>} Result object with valid flag and reason
+   */
+  async canEnterBuilding(character) {
+    if (!character.location.buildingId) {
+      return { valid: false, reason: 'No building to enter' };
+    }
+
+    if (character.location.isInside) {
+      return { valid: false, reason: 'Already inside the building' };
+    }
+
+    const building = await Building.findById(character.location.buildingId);
+    if (!building) {
+      return { valid: false, reason: 'Building not found' };
+    }
+
+    // Check barricades
+    if (building.barricadeLevel > 0) {
+      if (character.type === 'zombie') {
+        return { valid: false, reason: 'Zombies cannot enter barricaded buildings' };
+      }
+
+      if (building.barricadeLevel >= 60) {
+        // "Heavily barricaded" or higher
+        const hasFreeFunning = character.skills.some(skill =>
+          skill.name === 'Free Running' && skill.active
+        );
+
+        if (!hasFreeFunning) {
+          return { valid: false, reason: 'Building is too heavily barricaded to enter without Free Running' };
+        }
+      }
+    } else if (!building.doorsOpen) {
+      // Closed doors checks for zombies
+      if (character.type === 'zombie') {
+        const hasMemoriesOfLife = character.skills.some(skill =>
+          skill.name === 'Memories of Life' && skill.active
+        );
+
+        if (!hasMemoriesOfLife) {
+          return { valid: false, reason: 'Doors are closed and cannot be opened without Memories of Life' };
+        }
+      }
+    }
+
+    return { valid: true };
+  }
+
+  /**
+   * Check if character can exit a building
+   * @param {Object} character - Character document
+   * @returns {Promise<Object>} Result object with valid flag and reason
+   */
+  async canExitBuilding(character) {
+    if (!character.location.buildingId || !character.location.isInside) {
+      return { valid: false, reason: 'Not inside a building' };
+    }
+
+    const building = await Building.findById(character.location.buildingId);
+    if (!building) {
+      return { valid: false, reason: 'Building not found' };
+    }
+
+    // Check if very heavily or extremely heavily barricaded (levels 8-9)
+    if (building.barricadeLevel >= 80) {
+      if (character.type === 'survivor') {
+        const hasFreeFunning = character.skills.some(skill =>
+          skill.name === 'Free Running' && skill.active
+        );
+
+        if (!hasFreeFunning) {
+          return { valid: false, reason: 'Building is too heavily barricaded to exit without Free Running' };
+        }
+      }
+    }
+
+    return { valid: true };
   }
 
   /**

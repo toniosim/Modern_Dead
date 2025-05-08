@@ -66,6 +66,10 @@ const characterSchema = new Schema({
       ref: 'Building',
       default: null
     },
+    isInside: {
+      type: Boolean,
+      default: false
+    },
     areaName: String
   },
   // Items in character's inventory

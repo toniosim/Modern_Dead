@@ -283,8 +283,10 @@ class MovementService {
     // Update building reference if applicable
     if (targetCell.type === 'building' && targetCell.building) {
       character.location.buildingId = targetCell.building;
+      character.location.isInside = false;
     } else {
       character.location.buildingId = null;
+      character.location.isInside = false;
     }
 
     // Update area name

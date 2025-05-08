@@ -150,6 +150,65 @@ export const useMapStore = defineStore('map', () => {
   }
 
   /**
+   * Enter a building
+   */
+  async function enterBuilding(characterId: string) {
+    loading.value = true;
+    error.value = null;
+
+    try {
+      const response = await api.post(`/map/enter-building/${characterId}`);
+
+      // Update local data
+      mapArea.value = response.data.mapArea;
+
+      // Update character in character store
+      if (response.data.character) {
+        characterStore.updateCharacterData(response.data.character);
+      }
+
+      // If we have a building, load building details
+      if (response.data.character?.location?.buildingId) {
+        await getBuilding(response.data.character.location.buildingId);
+      }
+
+      return response.data;
+    } catch (err: any) {
+      error.value = err.response?.data?.message || 'Failed to enter building';
+      throw error.value;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  /**
+   * Exit a building
+   */
+  async function exitBuilding(characterId: string) {
+    loading.value = true;
+    error.value = null;
+
+    try {
+      const response = await api.post(`/map/exit-building/${characterId}`);
+
+      // Update local data
+      mapArea.value = response.data.mapArea;
+
+      // Update character in character store
+      if (response.data.character) {
+        characterStore.updateCharacterData(response.data.character);
+      }
+
+      return response.data;
+    } catch (err: any) {
+      error.value = err.response?.data?.message || 'Failed to exit building';
+      throw error.value;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  /**
    * Get building details
    */
   async function getBuilding(buildingId: string) {
@@ -293,6 +352,8 @@ export const useMapStore = defineStore('map', () => {
     isAdjacentToCurrentLocation,
     getCellAt,
     getCharactersAt,
+    enterBuilding,
+    exitBuilding,
     clearMapData
   };
 });

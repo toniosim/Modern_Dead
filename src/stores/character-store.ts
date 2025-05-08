@@ -46,6 +46,7 @@ export interface Character {
     x: number;
     y: number;
     buildingId: string | null;
+    isInside: boolean;
     areaName: string;
   };
   inventory: {

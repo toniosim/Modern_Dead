@@ -109,6 +109,10 @@
             <q-card-section>
               <map-view />
             </q-card-section>
+
+            <q-card-section>
+              <ActionLog />
+            </q-card-section>
           </q-card>
         </div>
       </div>
@@ -153,6 +157,7 @@ import { useCharacterStore, type Character, ClassGroup } from 'src/stores/charac
 import MapView from 'components/map/MapView.vue';
 import MapInfo from 'components/map/MapInfo.vue';
 import DebugPanel from 'components/debug/DebugPanel.vue';
+import ActionLog from "components/messages/ActionLog.vue";
 
 const characterStore = useCharacterStore();
 const showDebug = ref(false);

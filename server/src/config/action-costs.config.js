@@ -12,32 +12,33 @@ const BASE_COSTS = {
   EXIT_BUILDING: 0,
 
   // Combat
-  ATTACK: 2,
-  BITE_ATTACK: 2,
-  MELEE_ATTACK: 2,
-  FIREARM_ATTACK: 2,
+  ATTACK: 1,
+  BITE_ATTACK: 1,
+  MELEE_ATTACK: 1,
+  FIREARM_ATTACK: 1,
 
   // Building interaction
   SEARCH: 1,
-  BARRICADE: 3,
-  REPAIR: 3,
-  DESTROY_BARRICADE: 3,
-  RANSACK: 3,
+  BARRICADE: 1,
+  REPAIR: 1,
+  DESTROY_BARRICADE: 1,
+  RANSACK: 1,
 
   // Items and healing
-  USE_ITEM: 2,
-  HEAL: 3,
-  REVIVE: 10,
-  EXTRACT_DNA: 2,
+  USE_ITEM: 1,
+  HEAL: 1,
+  REVIVE: 2,
+  EXTRACT_DNA: 1,
 
   // Communication
   RADIO_BROADCAST: 0,
-  SPRAY_GRAFFITI: 2,
+  SPRAY_GRAFFITI: 1,
   SPEAK: 0,
 
   // Special actions
   REST: 1,
   LEARN_SKILL: 0,
+  STAND: 3,
 };
 
 /**

@@ -691,8 +691,4 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
 }
-
-.movement-controls {
-  margin-top: 20px;
-}
 </style>

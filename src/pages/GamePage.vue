@@ -3,7 +3,7 @@
     <div v-if="characterStore.getActiveCharacter">
       <div class="row q-col-gutter-md">
         <!-- Character Status Panel -->
-        <div class="col-12 col-md-4">
+        <div class="col-12 col-md-3">
           <q-card class="character-status-card">
             <q-card-section>
               <div class="row items-center justify-between">
@@ -104,17 +104,25 @@
         </div>
 
         <!-- Map View Panel -->
-        <div class="col-12 col-md-8">
+        <div class="col-12 col-md-6">
           <q-card class="map-card">
             <q-card-section>
               <map-view />
             </q-card-section>
+          </q-card>
+        </div>
 
+        <!-- Action Log -->
+        <div class="col-12 col-md-3">
+          <q-card class="action-log">
             <q-card-section>
-              <ActionLog />
+              <q-card-section>
+                <ActionLog />
+              </q-card-section>
             </q-card-section>
           </q-card>
         </div>
+
       </div>
     </div>
 

@@ -323,7 +323,7 @@ const processApRegeneration = async () => {
 
   const activeCharacters = await Character.find({
     lastActive: { $gte: activeTime },
-    'actions.availableActions': { $lt: '$actions.maxActions' } // Only those not at max AP
+    $expr: { $lt: ["$actions.availableActions", "$actions.maxActions"] }
   });
 
   console.log(`Processing AP regeneration for ${activeCharacters.length} characters`);

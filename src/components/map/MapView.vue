@@ -141,10 +141,8 @@ interface BuildingInteractionDetail {
 // Computed properties
 const currentBuildingName = computed(() => {
   if (mapStore.currentCell?.type === 'building' && mapStore.currentCell?.building) {
-    const buildingId = mapStore.currentCell.building._id;
 
-    // If we have building details loaded
-    if (mapStore.currentBuilding?._id === buildingId) {
+    if (mapStore.currentBuilding) {
       return mapStore.currentBuilding.name;
     }
 

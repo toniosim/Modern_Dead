@@ -7,8 +7,6 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const compression = require('compression');
 const http = require('http');
-const socketio = require('socket.io');
-const jwt = require('jsonwebtoken');
 const testRoutes = require('./routes/test.routes');
 const authRoutes = require('./routes/auth.routes');
 const characterRoutes = require('./routes/character.routes');
@@ -23,15 +21,14 @@ const connectDB = require('./config/database');
 // Create Express app
 const app = express();
 
+// Import the socket service
+const socketService = require('./services/socket.service');
+
 // Set up Socket.io
 const server = http.createServer(app);
-const io = socketio(server, {
-  cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:9000',
-    methods: ['GET', 'POST'],
-    credentials: true
-  }
-});
+
+// Initialize socket service with the server
+socketService.initialize(server);
 
 // Apply middleware
 app.use(helmet());
@@ -62,161 +59,10 @@ app.use('/api/characters', characterRoutes);
 app.use('/api/map', mapRoutes);
 // debug routes
 const debugRoutes = require('./routes/debug.routes');
+const {io} = require("socket.io-client");
 if (process.env.NODE_ENV !== 'production') {
   app.use('/api/debug', debugRoutes);
 }
-
-// Socket.io connection handling
-io.on('connection', (socket) => {
-  console.log('A user connected:', socket.id);
-
-  // Handle authentication
-  socket.on('authenticate', (data) => {
-    try {
-      console.log('Socket authentication attempt:', {
-        tokenPresent: !!data.token,
-        characterId: data.characterId
-      });
-
-      // Verify JWT token - this is the critical part
-      const decoded = jwt.verify(data.token, process.env.JWT_SECRET);
-
-      // Associate user data with socket
-      socket.userId = decoded.userId;
-      socket.username = decoded.username;
-
-      // Add characterId if provided
-      if (data.characterId) {
-        socket.characterId = data.characterId;
-      }
-
-      // Join user to their personal room
-      socket.join(`user:${decoded.userId}`);
-
-      console.log(`User authenticated: ${decoded.username}`);
-
-      // Notify client of successful authentication
-      socket.emit('authenticated', {
-        username: decoded.username,
-        characterId: socket.characterId
-      });
-    } catch (error) {
-      console.error('Authentication failed:', error.message);
-      socket.emit('auth_error', { message: 'Authentication failed' });
-    }
-  });
-
-  // Handle map-related events
-  socket.on('join_location', (data) => {
-    // Check if user is authenticated
-    if (!socket.userId) {
-      socket.emit('error', { message: 'Not authenticated' });
-      return;
-    }
-
-    // Remove from previous location room if any
-    if (socket.currentLocation) {
-      socket.leave(`location:${socket.currentLocation}`);
-    }
-
-    // Join new location room
-    socket.join(`location:${data.x},${data.y}`);
-    socket.currentLocation = `${data.x},${data.y}`;
-
-    // Notify other players in the same location
-    socket.to(`location:${data.x},${data.y}`).emit('player_joined', {
-      username: socket.username,
-      // Include other player data here
-    });
-  });
-
-  // Handle building entry/exit
-  socket.on('building_interaction', (data) => {
-    // Check if user is authenticated
-    if (!socket.userId) {
-      socket.emit('error', { message: 'Not authenticated' });
-      return;
-    }
-
-    // Notify other players in the same location
-    socket.to(`location:${socket.currentLocation}`).emit('building_updated', {
-      username: socket.username,
-      action: data.action,
-      characterId: data.characterId
-    });
-  });
-
-  // Handle player movement
-  socket.on('player_moved', (data) => {
-    // Validate user is authenticated
-    if (!socket.userId) {
-      socket.emit('error', { message: 'Not authenticated' });
-      return;
-    }
-
-    // Notify players in both old and new locations
-    socket.to(`location:${socket.currentLocation}`).emit('player_left', {
-      username: socket.username
-    });
-
-    // Leave old location room
-    if (socket.currentLocation) {
-      socket.leave(`location:${socket.currentLocation}`);
-    }
-
-    // Update current location
-    socket.currentLocation = `${data.x},${data.y}`;
-    socket.join(`location:${socket.currentLocation}`);
-
-    socket.to(`location:${socket.currentLocation}`).emit('player_joined', {
-      username: socket.username,
-      character: {
-        ...data,
-        name: socket.username,
-        type: 'survivor' // This would come from the database normally
-      }
-    });
-  });
-
-  // Handle building interaction
-  socket.on('building_interaction', (data) => {
-    // Check if user is authenticated
-    if (!socket.userId) {
-      socket.emit('error', { message: 'Not authenticated' });
-      return;
-    }
-
-    // Notify other players in the same location
-    socket.to(`location:${socket.currentLocation}`).emit('building_updated', {
-      username: socket.username,
-      buildingId: data.buildingId,
-      action: data.action,
-      result: data.result
-    });
-  });
-
-  // Handle test events
-  socket.on('test_event', (data) => {
-    console.log('Received test event:', data);
-    socket.emit('test_response', {
-      message: 'Test message received',
-      timestamp: new Date().toISOString(),
-      received: data
-    });
-  });
-
-  // Handle disconnection
-  socket.on('disconnect', () => {
-    console.log('User disconnected:', socket.id);
-
-    // Notify other players if the user was authenticated
-    if (socket.username && socket.currentLocation) {
-      socket.to(`location:${socket.currentLocation}`).emit('player_left', {
-        username: socket.username
-      });
-    }
-  });
-});
 
 // Error handlers
 app.use(databaseErrorHandler);

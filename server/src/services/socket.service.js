@@ -1,6 +1,7 @@
 const socketIO = require('socket.io');
 const apService = require('./ap.service');
 const Character = require('../models/character.model');
+const jwt = require('jsonwebtoken');
 
 let io;
 
@@ -10,11 +11,15 @@ const activeConnections = new Map();
 // Map of scheduled AP updates (to avoid duplicate update processing)
 const scheduledUpdates = new Map();
 
-// Initialize Socket.io with the HTTP server
+/**
+ * Initialize Socket.io with the HTTP server
+ * @param {Server} server - HTTP/Express server
+ * @returns {SocketIO.Server} - Socket.io instance
+ */
 const initialize = (server) => {
   io = socketIO(server, {
     cors: {
-      origin: process.env.CLIENT_URL || 'http://localhost:8080',
+      origin: process.env.CLIENT_URL || 'http://localhost:9000',
       methods: ['GET', 'POST'],
       credentials: true
     }
@@ -28,50 +33,14 @@ const initialize = (server) => {
   return io;
 };
 
-// Handle new socket connections
+/**
+ * Handle new socket connections
+ * @param {Socket} socket - Socket instance
+ */
 const handleConnection = (socket) => {
-  // Authenticate the socket connection
-  socket.on('authenticate', async (data) => {
-    try {
-      const { userId, characterId } = data;
+  console.log('A user connected:', socket.id);
 
-      if (!userId) {
-        socket.emit('authentication_error', { message: 'User ID is required' });
-        return;
-      }
-
-      // Store the connection information
-      socket.userId = userId;
-      socket.characterId = characterId;
-
-      // Add to active connections
-      if (!activeConnections.has(userId)) {
-        activeConnections.set(userId, new Map());
-      }
-
-      if (characterId) {
-        activeConnections.get(userId).set(characterId, socket);
-
-        // Subscribe to character-specific room
-        socket.join(`character:${characterId}`);
-
-        // Send initial AP update
-        await sendApUpdate(userId, characterId);
-      }
-
-      // Subscribe to user-specific room
-      socket.join(`user:${userId}`);
-
-      socket.emit('authentication_success', { userId, characterId });
-
-      console.log(`User ${userId} authenticated with character ${characterId || 'none'}`);
-    } catch (error) {
-      console.error('Authentication error:', error);
-      socket.emit('authentication_error', { message: 'Failed to authenticate' });
-    }
-  });
-
-  // Handle character selection
+  // Handle authentication
   socket.on('authenticate', (data) => {
     try {
       console.log('Socket authentication attempt:', {
@@ -82,11 +51,27 @@ const handleConnection = (socket) => {
       // Verify JWT token
       const decoded = jwt.verify(data.token, process.env.JWT_SECRET);
 
-      console.log('Token decoded successfully:', decoded);
-
       // Associate user data with socket
       socket.userId = decoded.userId;
       socket.username = decoded.username;
+
+      // Add characterId if provided
+      if (data.characterId) {
+        socket.characterId = data.characterId;
+
+        // Store the connection information
+        if (!activeConnections.has(decoded.userId)) {
+          activeConnections.set(decoded.userId, new Map());
+        }
+
+        activeConnections.get(decoded.userId).set(data.characterId, socket);
+
+        // Subscribe to character-specific room
+        socket.join(`character:${data.characterId}`);
+
+        // Send initial AP update
+        sendApUpdate(decoded.userId, data.characterId);
+      }
 
       // Join user to their personal room
       socket.join(`user:${decoded.userId}`);
@@ -94,18 +79,140 @@ const handleConnection = (socket) => {
       console.log(`User authenticated: ${decoded.username}`);
 
       // Notify client of successful authentication
-      socket.emit('authenticated', { username: decoded.username });
+      socket.emit('authenticated', {
+        username: decoded.username,
+        characterId: socket.characterId
+      });
     } catch (error) {
       console.error('Authentication failed:', error.message);
       socket.emit('auth_error', { message: 'Authentication failed' });
     }
   });
 
+  // Handle map-related events
+  socket.on('join_location', (data) => {
+    // Check if user is authenticated
+    if (!socket.userId) {
+      socket.emit('error', { message: 'Not authenticated' });
+      return;
+    }
+
+    // Remove from previous location room if any
+    if (socket.currentLocation) {
+      socket.leave(`location:${socket.currentLocation}`);
+    }
+
+    // Join new location room
+    const locationKey = `${data.x},${data.y}`;
+    socket.join(`location:${locationKey}`);
+    socket.currentLocation = locationKey;
+
+    // Notify other players in the same location
+    socket.to(`location:${locationKey}`).emit('player_joined', {
+      username: socket.username,
+    });
+  });
+
+  // Handle character selection
+  socket.on('select_character', (data) => {
+    if (!socket.userId || !data.characterId) {
+      socket.emit('error', { message: 'Invalid data' });
+      return;
+    }
+
+    // Update socket data
+    socket.characterId = data.characterId;
+
+    // Store connection info
+    if (!activeConnections.has(socket.userId)) {
+      activeConnections.set(socket.userId, new Map());
+    }
+
+    activeConnections.get(socket.userId).set(data.characterId, socket);
+
+    // Subscribe to character-specific room
+    socket.join(`character:${data.characterId}`);
+
+    // Send initial AP update
+    sendApUpdate(socket.userId, data.characterId);
+  });
+
+  // Handle player movement
+  socket.on('player_moved', (data) => {
+    // Validate user is authenticated
+    if (!socket.userId) {
+      socket.emit('error', { message: 'Not authenticated' });
+      return;
+    }
+
+    // Notify players in both old and new locations
+    if (socket.currentLocation) {
+      socket.to(`location:${socket.currentLocation}`).emit('player_left', {
+        username: socket.username
+      });
+
+      // Leave old location room
+      socket.leave(`location:${socket.currentLocation}`);
+    }
+
+    // Update current location
+    const newLocationKey = `${data.x},${data.y}`;
+    socket.currentLocation = newLocationKey;
+    socket.join(`location:${newLocationKey}`);
+
+    socket.to(`location:${newLocationKey}`).emit('player_joined', {
+      username: socket.username,
+      character: {
+        ...data,
+        name: socket.username,
+        type: data.type || 'survivor'
+      }
+    });
+  });
+
+  // Handle building interaction
+  socket.on('building_interaction', (data) => {
+    // Check if user is authenticated
+    if (!socket.userId) {
+      socket.emit('error', { message: 'Not authenticated' });
+      return;
+    }
+
+    // Notify other players in the same location
+    if (socket.currentLocation) {
+      socket.to(`location:${socket.currentLocation}`).emit('building_updated', {
+        username: socket.username,
+        buildingId: data.buildingId,
+        action: data.action,
+        result: data.result
+      });
+    }
+  });
+
+  // Handle test events
+  socket.on('test_event', (data) => {
+    console.log('Received test event:', data);
+    socket.emit('test_response', {
+      message: 'Test message received',
+      timestamp: new Date().toISOString(),
+      received: data
+    });
+  });
+
   // Handle disconnection
   socket.on('disconnect', () => {
     try {
-      const { userId, characterId } = socket;
+      console.log('User disconnected:', socket.id);
 
+      // Notify other players if the user was authenticated
+      if (socket.username && socket.currentLocation) {
+        socket.to(`location:${socket.currentLocation}`).emit('player_left', {
+          username: socket.username
+        });
+      }
+
+      // Clean up active connections
+      const { userId, characterId } = socket;
       if (userId && characterId && activeConnections.has(userId)) {
         activeConnections.get(userId).delete(characterId);
 
@@ -113,8 +220,6 @@ const handleConnection = (socket) => {
           activeConnections.delete(userId);
         }
       }
-
-      console.log(`User ${userId || 'unknown'} disconnected`);
     } catch (error) {
       console.error('Disconnect error:', error);
     }
@@ -218,7 +323,7 @@ const processApRegeneration = async () => {
 
   const activeCharacters = await Character.find({
     lastActive: { $gte: activeTime },
-    'actions.availableActions': { $lt: '$actions.maxActions' } // Only those not at max AP
+    $expr: { $lt: ["$actions.availableActions", "$actions.maxActions"] }
   });
 
   console.log(`Processing AP regeneration for ${activeCharacters.length} characters`);

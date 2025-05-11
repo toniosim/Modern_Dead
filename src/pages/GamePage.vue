@@ -2,6 +2,7 @@
   <q-page padding>
     <div v-if="characterStore.getActiveCharacter">
       <div class="row q-col-gutter-md">
+        <!-- Left-side Panel -->
         <!-- Character Status Panel -->
         <div class="col-12 col-md-3">
           <q-card class="character-status-card">
@@ -98,11 +99,10 @@
               </div>
             </q-card-section>
 
-            <!-- Location Information -->
-            <map-info />
           </q-card>
         </div>
 
+        <!-- Middle Panel -->
         <!-- Map View Panel -->
         <div class="col-12 col-md-6">
           <q-card class="map-card">
@@ -112,14 +112,23 @@
           </q-card>
         </div>
 
-        <!-- Action Log -->
+        <!-- Right-side Panel -->
         <div class="col-12 col-md-3">
-          <q-card class="action-log">
+          <q-card class="right-side-panel">
+            <!-- Action Log -->
             <q-card-section>
               <q-card-section>
                 <ActionLog />
               </q-card-section>
             </q-card-section>
+
+            <q-separator />
+
+            <q-card-section>
+              <!-- Location Information -->
+              <map-info />
+            </q-card-section>
+
           </q-card>
         </div>
 

@@ -57,6 +57,9 @@ class SocketService {
     this.socket.on('ap_consumed', this.handleApConsumed.bind(this));
     this.socket.on('ap_insufficient', this.handleApInsufficient.bind(this));
 
+    // buidling interaction
+    this.socket.on('building_interaction', this.interactWithBuilding.bind(this));
+
     // Connect the socket
     this.socket.connect();
   }

@@ -128,6 +128,16 @@ import socketService from 'src/services/socket.service.js';
 const mapStore = useMapStore();
 const characterStore = useCharacterStore();
 
+interface CharacterMovedDetail {
+  x: number;
+  y: number;
+}
+
+interface BuildingInteractionDetail {
+  action: string;
+  buildingId: string;
+}
+
 // Computed properties
 const currentBuildingName = computed(() => {
   if (mapStore.currentCell?.type === 'building' && mapStore.currentCell?.building) {
@@ -325,67 +335,6 @@ function hasCharacters(cell: MapCell | null) {
   return mapStore.getCharactersAt(cell.x, cell.y).length > 0;
 }
 
-// Movement methods
-function canMove(direction: 'north' | 'east' | 'south' | 'west') {
-  if (!mapStore.currentCell) return false;
-
-  const { x, y } = mapStore.currentCell;
-
-  switch (direction) {
-    case 'north':
-      return mapStore.getCellAt(x, y - 1) !== null;
-    case 'east':
-      return mapStore.getCellAt(x + 1, y) !== null;
-    case 'south':
-      return mapStore.getCellAt(x, y + 1) !== null;
-    case 'west':
-      return mapStore.getCellAt(x - 1, y) !== null;
-  }
-}
-
-function move(direction: 'north' | 'east' | 'south' | 'west') {
-  const activeCharacter = characterStore.getActiveCharacter;
-  if (!mapStore.currentCell || !activeCharacter) return;
-
-  const { x, y } = mapStore.currentCell;
-  let targetX = x;
-  let targetY = y;
-
-  switch (direction) {
-    case 'north':
-      targetY -= 1;
-      break;
-    case 'east':
-      targetX += 1;
-      break;
-    case 'south':
-      targetY += 1;
-      break;
-    case 'west':
-      targetX -= 1;
-      break;
-  }
-
-  // Check if the move is valid
-  const targetCell = mapStore.getCellAt(targetX, targetY);
-  if (!targetCell) return;
-
-  // Move the character
-  mapStore.moveCharacter(
-    activeCharacter._id,
-    targetX,
-    targetY
-  ).then(() => {
-    // Emit socket event for real-time updates
-    socketService.moveCharacter({
-      characterId: activeCharacter._id,
-      x: targetX,
-      y: targetY
-    });
-  }).catch(error => {
-    console.error('Movement failed:', error);
-  });
-}
 
 // Building interaction methods
 function canBarricade() {
@@ -486,6 +435,17 @@ function interactWithBuilding(action: string) {
         result
       }
     );
+
+    // Dispatch event for ActionLog
+    const eventDetail: BuildingInteractionDetail = {
+      action,
+      buildingId
+    };
+    const customEvent = new CustomEvent<BuildingInteractionDetail>('building-interaction', {
+      detail: eventDetail
+    });
+    document.dispatchEvent(customEvent);
+
   }).catch(error => {
     console.error('Building interaction failed:', error);
   });
@@ -520,6 +480,13 @@ function handleCellClick(cell: MapCell | null) {
         x: cell.x,
         y: cell.y
       });
+
+      // Dispatch custom event for ActionLog
+      const eventDetail: CharacterMovedDetail = { x: cell.x, y: cell.y };
+      const customEvent = new CustomEvent<CharacterMovedDetail>('character-moved', {
+        detail: eventDetail
+      });
+      document.dispatchEvent(customEvent);
 
       // If we're moving to a building, load building details
       if (cell.type === 'building' && cell.building) {

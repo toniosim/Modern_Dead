@@ -161,6 +161,7 @@ import ActionLog from "components/messages/ActionLog.vue";
 
 const characterStore = useCharacterStore();
 const showDebug = ref(false);
+const actionLogRef = ref<InstanceType<typeof ActionLog> | null>(null);
 
 // Load active character if available
 onMounted(async () => {
@@ -253,6 +254,13 @@ function getApStatusClass(character: Character) {
     return 'ap-available';
   }
 }
+
+// Log actions that can be called from anywhere
+const logAction = (type: 'movement' | 'building' | 'combat' | 'system', message: string): void => {
+  if (actionLogRef.value) {
+    actionLogRef.value.addAction(type, message);
+  }
+};
 </script>
 
 <style scoped>

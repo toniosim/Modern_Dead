@@ -99,6 +99,13 @@
               </div>
             </q-card-section>
 
+            <!-- Action Log -->
+            <q-card-section>
+              <q-card-section>
+                <ActionLog />
+              </q-card-section>
+            </q-card-section>
+
           </q-card>
         </div>
 
@@ -115,11 +122,9 @@
         <!-- Right-side Panel -->
         <div class="col-12 col-md-3">
           <q-card class="right-side-panel">
-            <!-- Action Log -->
+            <!-- Inventory Section -->
             <q-card-section>
-              <q-card-section>
-                <ActionLog />
-              </q-card-section>
+              <InventoryPane/>
             </q-card-section>
 
             <q-separator />
@@ -175,6 +180,7 @@ import MapView from 'components/map/MapView.vue';
 import MapInfo from 'components/map/MapInfo.vue';
 import DebugPanel from 'components/debug/DebugPanel.vue';
 import ActionLog from "components/messages/ActionLog.vue";
+import InventoryPane from "components/character/InventoryPane.vue";
 
 const characterStore = useCharacterStore();
 const showDebug = ref(false);

@@ -308,9 +308,23 @@ function getCellClasses(cell: MapCell | null) {
   // Building type specific classes
   if (cell.type === 'building' && cell.building) {
     // Add specific classes based on building type
-    // This would need to be expanded based on actual data
-    if (mapStore.currentBuilding && mapStore.currentBuilding._id === cell.building._id) {
-      classes.push(mapStore.currentBuilding.type.toLowerCase());
+    if (typeof cell.building === 'object' && cell.building.type) {
+      // Use the building type directly from the object
+      classes.push(cell.building.type.toLowerCase());
+    } else if (typeof cell.building === 'string') {
+      // If building is just an ID and we have current building loaded
+      if (mapStore.currentBuilding &&
+        mapStore.currentCell &&
+        mapStore.currentCell.building === cell.building) {
+        classes.push(mapStore.currentBuilding.type.toLowerCase());
+      }
+    }
+
+    // Add state classes if available
+    if (typeof cell.building === 'object') {
+      if (cell.building.state === 'ransacked') classes.push('ransacked');
+      if (cell.building.state === 'ruined') classes.push('ruined');
+      if (cell.building.isPowered) classes.push('powered');
     }
   }
 
@@ -636,6 +650,16 @@ onUnmounted(() => {
 
 .map-cell.mall {
   background-color: var(--md-mall);
+  color: var(--md-background);
+}
+
+.map-cell.auto_repait {
+  background-color: var(--md-auto-repair);
+  color: var(--md-background);
+}
+
+.map-cell.junkyard {
+  background-color: var(--md-junkyard);
   color: var(--md-background);
 }
 

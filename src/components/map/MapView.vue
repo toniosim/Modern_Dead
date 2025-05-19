@@ -77,13 +77,12 @@
           <div v-if="isInsideBuilding" class="q-mt-sm">
             <div class="text-subtitle2 q-mb-xs">Building Actions</div>
             <q-btn
-              v-if="canBarricade()"
               color="positive"
               label="Barricade"
               icon="construction"
               class="q-mr-sm"
               @click="interactWithBuilding('barricade')"
-              :disable="characterStore.loading"
+              :disable="canBarricade()"
             />
             <q-btn
               v-if="canOpenDoors()"
@@ -362,8 +361,8 @@ function canBarricade() {
 
   if (!hasConstruction) return false;
 
-  // Check if there's enough AP (2 AP needed)
-  return characterStore.getActiveCharacter.actions.availableActions >= 2;
+  // Check if there's enough AP
+  return characterStore.getActiveCharacter.actions.availableActions >= 1;
 }
 
 function canOpenDoors() {

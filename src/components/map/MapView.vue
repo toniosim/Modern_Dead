@@ -82,7 +82,7 @@
               icon="construction"
               class="q-mr-sm"
               @click="interactWithBuilding('barricade')"
-              :disable="canBarricade()"
+              :disable="!canBarricade()"
             />
             <q-btn
               v-if="canOpenDoors()"

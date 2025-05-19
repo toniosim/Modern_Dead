@@ -24,6 +24,46 @@
       </div>
     </q-card-section>
 
+    <!-- XP Management Section -->
+    <q-card-section>
+      <div class="text-subtitle1">XP Management</div>
+
+      <div class="row q-col-gutter-sm q-my-sm">
+        <div class="col-12 col-sm-6">
+          <q-input v-model.number="xpAmount" type="number" label="XP Amount" min="1" />
+        </div>
+        <div class="col-12 col-sm-6">
+          <div class="text-caption q-mb-xs">Current XP: {{ characterStore.getActiveCharacter?.experience || 0 }}</div>
+          <div class="text-caption">Level: {{ characterStore.getActiveCharacter?.level || 1 }}</div>
+        </div>
+        <div class="col-12 flex justify-between q-mt-sm">
+          <q-btn color="positive" label="Add XP" @click="addXP" :disable="!xpAmount || xpActionInProgress" />
+          <q-btn color="primary" label="Set XP" @click="setXP" :disable="!xpAmount || xpActionInProgress" />
+        </div>
+      </div>
+
+      <!-- XP Cost Info for Skills -->
+      <div class="q-mt-md">
+        <div class="text-caption text-weight-bold">XP Cost for Skills (by Category):</div>
+        <q-list dense bordered>
+          <q-item v-if="characterStore.getActiveCharacter?.xpCosts">
+            <q-item-section>
+              <div class="row q-col-gutter-md">
+                <div class="col-6">
+                  <div class="text-caption">Military: {{ characterStore.getActiveCharacter?.xpCosts?.military || 100 }}</div>
+                  <div class="text-caption">Science: {{ characterStore.getActiveCharacter?.xpCosts?.science || 100 }}</div>
+                </div>
+                <div class="col-6">
+                  <div class="text-caption">Civilian: {{ characterStore.getActiveCharacter?.xpCosts?.civilian || 100 }}</div>
+                  <div class="text-caption">Zombie: {{ characterStore.getActiveCharacter?.xpCosts?.zombie || 100 }}</div>
+                </div>
+              </div>
+            </q-item-section>
+          </q-item>
+        </q-list>
+      </div>
+    </q-card-section>
+
     <!-- Skill Management Section -->
     <q-card-section>
       <div class="text-subtitle1">Skill Management</div>
@@ -39,7 +79,19 @@
             emit-value
             map-options
             :loading="skillsLoading"
-          />
+          >
+            <template v-slot:option="scope">
+              <q-item v-bind="scope.itemProps">
+                <q-item-section>
+                  <q-item-label>{{ scope.opt.name }}</q-item-label>
+                  <q-item-label caption>
+                    {{ scope.opt.category.charAt(0).toUpperCase() + scope.opt.category.slice(1) }}
+                    - {{ getSkillXpCost(scope.opt.name) }} XP
+                  </q-item-label>
+                </q-item-section>
+              </q-item>
+            </template>
+          </q-select>
         </div>
         <div class="col-12 flex justify-between q-mt-sm">
           <q-btn color="positive" label="Add Skill" @click="addSkill" :disable="!selectedSkill || skillActionInProgress" />
@@ -117,6 +169,15 @@ import { useCharacterStore } from 'src/stores/character-store';
 import { useMapStore } from 'src/stores/map-store';
 import { api } from 'src/boot/axios';
 
+// Define types for skill categories
+type SkillCategory = 'military' | 'science' | 'civilian' | 'zombie';
+type XpCosts = Record<SkillCategory, number>;
+
+interface Skill {
+  name: string;
+  category: SkillCategory;
+}
+
 // Store references
 const characterStore = useCharacterStore();
 const mapStore = useMapStore();
@@ -144,14 +205,32 @@ const buildingTypeOptions = [
 
 // Skill management state
 const selectedSkill = ref(null);
-const availableSkills = ref<Array<{name: string, category: string}>>([]);
+const availableSkills = ref<Skill[]>([]);
 const skillsLoading = ref(false);
 const skillActionInProgress = ref(false);
+
+// XP management state
+const xpAmount = ref(100);
+const xpActionInProgress = ref(false);
 
 // Computed properties
 const currentCharacterSkills = computed(() => {
   return characterStore.getActiveCharacter?.skills || [];
 });
+
+// Helper to get XP cost for a skill
+const getSkillXpCost = (skillName: string) => {
+  const activeCharacter = characterStore.getActiveCharacter;
+  if (!activeCharacter || !activeCharacter.xpCosts) return 100;
+
+  // Find the skill to determine its category
+  const skill = availableSkills.value.find(s => s.name === skillName);
+  if (!skill) return 100;
+
+  // Return the XP cost based on character class and skill category
+  const category = skill.category;
+  return activeCharacter.xpCosts[category] || 100;
+};
 
 // AP Management methods
 const setAP = async () => {
@@ -275,6 +354,27 @@ const addSkill = async () => {
 
   skillActionInProgress.value = true;
   try {
+    // Check if we have enough XP first
+    const requiredXP = getSkillXpCost(selectedSkill.value);
+    const currentXP = characterStore.getActiveCharacter.experience || 0;
+
+    if (currentXP < requiredXP) {
+      // If not enough XP, ask to add it automatically
+      if (confirm(`Not enough XP. Need ${requiredXP} but have ${currentXP}. Add ${requiredXP - currentXP} XP automatically?`)) {
+        // Add the needed XP
+        await api.post('/debug/add-xp', {
+          characterId: characterStore.getActiveCharacter._id,
+          amount: requiredXP - currentXP + 5 // Add a little extra
+        });
+
+        // Refresh character data after adding XP
+        await characterStore.getCharacter(characterStore.getActiveCharacter._id);
+      } else {
+        // User declined, abort
+        return;
+      }
+    }
+
     // Add the skill via API
     await api.post(`/characters/${characterStore.getActiveCharacter._id}/skills`, {
       skillName: selectedSkill.value
@@ -311,12 +411,53 @@ const removeSkill = async () => {
   }
 };
 
+// XP Management methods
+const addXP = async () => {
+  if (!characterStore.getActiveCharacter || !xpAmount.value) return;
+
+  xpActionInProgress.value = true;
+  try {
+// Add XP via API
+    await api.post('/debug/add-xp', {
+      characterId: characterStore.getActiveCharacter._id,
+      amount: xpAmount.value
+    });
+
+// Refresh character data
+    await characterStore.getCharacter(characterStore.getActiveCharacter._id);
+  } catch (error) {
+    console.error('Failed to add XP:', error);
+    alert('Failed to add XP');
+  } finally {
+    xpActionInProgress.value = false;
+  }
+};
+
+const setXP = async () => {
+  if (!characterStore.getActiveCharacter || !xpAmount.value) return;
+
+  xpActionInProgress.value = true;
+  try {
+// Set XP via API
+    await api.post('/debug/set-xp', {
+      characterId: characterStore.getActiveCharacter._id,
+      amount: xpAmount.value
+    });
+
+// Refresh character data
+    await characterStore.getCharacter(characterStore.getActiveCharacter._id);
+  } catch (error) {
+    console.error('Failed to set XP:', error);
+    alert('Failed to set XP');
+  } finally {
+    xpActionInProgress.value = false;
+  }
+}
+
 // Lifecycle hooks
 onMounted(() => {
   fetchAvailableSkills();
 });
-
-
 </script>
 
 <style scoped>

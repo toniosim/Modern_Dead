@@ -224,7 +224,7 @@ exports.exitBuilding = async (req, res, next) => {
     }
 
     // Check AP (costs 1 AP to exit a building)
-    if (character.actions.availableActions < 1) {
+    if (character.actions.availableActions < actionCosts.getBaseCost('EXIT_BUILDING')) {
       return res.status(400).json({ message: 'Not enough action points' });
     }
 
@@ -370,7 +370,7 @@ exports.interactWithBuilding = async (req, res, next) => {
         }
 
         // Check AP
-        if (character.actions.availableActions < 1) {
+        if (character.actions.availableActions < actionCosts.getBaseCost('OPEN_DOOR')) {
           return res.status(400).json({ message: 'Not enough action points' });
         }
 
@@ -401,7 +401,7 @@ exports.interactWithBuilding = async (req, res, next) => {
         }
 
         // Check AP
-        if (character.actions.availableActions < 1) {
+        if (character.actions.availableActions < actionCosts.getBaseCost('CLOSE_DOOR')) {
           return res.status(400).json({ message: 'Not enough action points' });
         }
 
@@ -435,7 +435,7 @@ exports.interactWithBuilding = async (req, res, next) => {
         }
 
         // Check AP
-        if (character.actions.availableActions < 1) {
+        if (character.actions.availableActions < actionCosts.getBaseCost('BARRICADE')) {
           return res.status(400).json({ message: 'Not enough action points' });
         }
 

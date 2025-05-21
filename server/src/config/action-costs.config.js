@@ -10,6 +10,8 @@ const BASE_COSTS = {
   MOVE: 0,
   ENTER_BUILDING: 0,
   EXIT_BUILDING: 0,
+  OPEN_DOOR: 0,
+  CLOSE_DOOR: 0,
 
   // Combat
   ATTACK: 1,

@@ -1,6 +1,7 @@
 const movementService = require('../services/movement.service');
 const Character = require('../models/character.model');
 const Building = require('../models/building.model');
+const actionCosts = require('../config/action-costs.config');
 
 /**
  * Get map area around character
@@ -176,7 +177,7 @@ exports.enterBuilding = async (req, res, next) => {
     const updatedCharacter = await movementService.enterBuilding(character);
 
     // Deduct AP
-    updatedCharacter.actions.availableActions -= 1;
+    updatedCharacter.actions.availableActions -= actionCosts.getBaseCost('ENTER_BUILDING');
     updatedCharacter.actions.lastActionTime = new Date();
     await updatedCharacter.save();
 
@@ -237,7 +238,7 @@ exports.exitBuilding = async (req, res, next) => {
     const updatedCharacter = await movementService.exitBuilding(character);
 
     // Deduct AP
-    updatedCharacter.actions.availableActions -= 1;
+    updatedCharacter.actions.availableActions -= actionCosts.getBaseCost('EXIT_BUILDING');
     updatedCharacter.actions.lastActionTime = new Date();
     await updatedCharacter.save();
 
@@ -378,7 +379,7 @@ exports.interactWithBuilding = async (req, res, next) => {
         await building.save();
 
         // Deduct AP
-        character.actions.availableActions -= 1;
+        character.actions.availableActions -= actionCosts.getBaseCost('OPEN_DOOR');
         character.actions.lastActionTime = new Date();
         await character.save();
 
@@ -409,7 +410,7 @@ exports.interactWithBuilding = async (req, res, next) => {
         await building.save();
 
         // Deduct AP
-        character.actions.availableActions -= 1;
+        character.actions.availableActions -= actionCosts.getBaseCost('CLOSE_DOOR');
         character.actions.lastActionTime = new Date();
         await character.save();
 
@@ -434,7 +435,7 @@ exports.interactWithBuilding = async (req, res, next) => {
         }
 
         // Check AP
-        if (character.actions.availableActions < 2) {
+        if (character.actions.availableActions < 1) {
           return res.status(400).json({ message: 'Not enough action points' });
         }
 
@@ -442,7 +443,7 @@ exports.interactWithBuilding = async (req, res, next) => {
         await building.addBarricade(10);
 
         // Deduct AP
-        character.actions.availableActions -= 2;
+        character.actions.availableActions -= actionCosts.getBaseCost('BARRICADE');
         character.actions.lastActionTime = new Date();
         await character.save();
 
@@ -474,7 +475,7 @@ exports.interactWithBuilding = async (req, res, next) => {
         await building.reduceBarricade(damageAmount);
 
         // Deduct AP
-        character.actions.availableActions -= 1;
+        character.actions.availableActions -= actionCosts.getBaseCost('ATTACK_BARRICADE');
         character.actions.lastActionTime = new Date();
 
         // Grant XP (for attacking barricades)

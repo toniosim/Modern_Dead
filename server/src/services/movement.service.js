@@ -176,62 +176,6 @@ class MovementService {
       };
     }
 
-    // If target is a building, check if it's accessible
-    if (targetCell.type === 'building' && targetCell.building) {
-      const building = await Building.findById(targetCell.building);
-
-      if (building) {
-        // Check barricade level
-        if (building.barricadeLevel >= 60) { // "Heavily barricaded" or higher
-          // Survivors need Free Running to enter
-          if (character.type === 'survivor') {
-            const hasFreeFunning = character.skills.some(skill =>
-              skill.name === 'Free Running' && skill.active
-            );
-
-            if (!hasFreeFunning) {
-              return {
-                valid: false,
-                apCost: 0,
-                reason: 'Building is too heavily barricaded to enter without Free Running'
-              };
-            }
-          } else {
-            // Zombies cannot enter heavily barricaded buildings
-            return {
-              valid: false,
-              apCost: 0,
-              reason: 'Building is too heavily barricaded for zombies to enter'
-            };
-          }
-        } else if (building.barricadeLevel > 0) {
-          // Any barricade blocks zombies
-          if (character.type === 'zombie') {
-            return {
-              valid: false,
-              apCost: 0,
-              reason: 'Building is barricaded and cannot be entered by zombies'
-            };
-          }
-        } else if (!building.doorsOpen) {
-          // Closed doors block zombies without Memories of Life
-          if (character.type === 'zombie') {
-            const hasMemoriesOfLife = character.skills.some(skill =>
-              skill.name === 'Memories of Life' && skill.active
-            );
-
-            if (!hasMemoriesOfLife) {
-              return {
-                valid: false,
-                apCost: 0,
-                reason: 'Doors are closed and cannot be opened without Memories of Life'
-              };
-            }
-          }
-        }
-      }
-    }
-
     // Calculate AP cost
     let apCost = actionCosts.getBaseCost('MOVE'); // Standard cost is 1 AP
 

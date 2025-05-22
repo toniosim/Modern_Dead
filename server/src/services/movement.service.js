@@ -109,7 +109,7 @@ class MovementService {
    * @param {Object} character - Character document
    * @param {Number} targetX - Target X coordinate
    * @param {Number} targetY - Target Y coordinate
-   * @returns {Promise<Object>} Validation result with AP cost
+   * @returns {Promise<Object>} Validation result with AP cost and movement type
    */
   async isValidMove(character, targetX, targetY) {
     // Get current location
@@ -131,43 +131,17 @@ class MovementService {
     );
 
     if (!isAdjacent) {
-      // Check if character has Free Running skill and both cells are buildings
-      const hasFreeFunning = character.skills.some(skill =>
-        skill.name === 'Free Running' && skill.active
-      );
-
-      if (hasFreeFunning) {
-        // Get current and target cells
-        const currentCell = await this.getCell(currentX, currentY);
-        const targetCell = await this.getCell(targetX, targetY);
-
-        // Check if both are buildings and are diagonally adjacent
-        const areBothBuildings =
-          currentCell?.type === 'building' &&
-          targetCell?.type === 'building';
-
-        const areDiagonallyAdjacent =
-          Math.abs(targetX - currentX) === 1 &&
-          Math.abs(targetY - currentY) === 1;
-
-        if (!(areBothBuildings && areDiagonallyAdjacent)) {
-          return {
-            valid: false,
-            apCost: 0,
-            reason: 'Cannot move to non-adjacent location without Free Running between adjacent buildings'
-          };
-        }
-      } else {
-        return {
-          valid: false,
-          apCost: 0,
-          reason: 'Target location is not adjacent'
-        };
-      }
+      return {
+        valid: false,
+        apCost: 0,
+        reason: 'Target location is not adjacent'
+      };
     }
 
-    // Get target cell
+    // Get current and target cells
+    const currentCell = await this.getCell(currentX, currentY, 'standard');
     const targetCell = await this.getCell(targetX, targetY, 'standard');
+
     if (!targetCell) {
       return {
         valid: false,
@@ -176,7 +150,80 @@ class MovementService {
       };
     }
 
-    // Calculate AP cost
+    // Check if character is inside a building
+    if (character.location.isInside) {
+      // Character is inside a building - they can only move if:
+      // 1. They have Free Running skill, AND
+      // 2. The target is also a building (for Free Running between buildings)
+
+      const hasFreeRunning = character.skills.some(skill =>
+        skill.name === 'Free Running' && skill.active
+      );
+
+      if (!hasFreeRunning) {
+        return {
+          valid: false,
+          apCost: 0,
+          reason: 'Must exit building before moving (or use Free Running to adjacent building)'
+        };
+      }
+
+      // Free Running is available - check if target is a building
+      if (targetCell.type !== 'building') {
+        return {
+          valid: false,
+          apCost: 0,
+          reason: 'Free Running can only be used between adjacent buildings'
+        };
+      }
+
+      // Get the target building to check barricade level
+      const targetBuilding = await Building.findById(targetCell.building);
+      if (!targetBuilding) {
+        return {
+          valid: false,
+          apCost: 0,
+          reason: 'Target building not found'
+        };
+      }
+
+      // Free Running between buildings is allowed regardless of barricade level
+      // This is building-to-building movement while staying inside
+      const apCost = this.calculateMovementAPCost(character);
+
+      return {
+        valid: true,
+        apCost,
+        movementType: 'freeRunning',
+        targetBuilding
+      };
+    }
+
+    // Character is outside - normal movement rules apply
+    let apCost = this.calculateMovementAPCost(character);
+
+    // Check if character has enough AP
+    if (character.actions.availableActions < apCost) {
+      return {
+        valid: false,
+        apCost,
+        reason: 'Not enough action points'
+      };
+    }
+
+    return {
+      valid: true,
+      apCost,
+      movementType: 'normal'
+    };
+  }
+
+  /**
+   * Calculate AP cost for movement based on character type and skills
+   * @param {Object} character - Character document
+   * @returns {Number} AP cost for movement
+   */
+  calculateMovementAPCost(character) {
     let apCost = actionCosts.getBaseCost('MOVE'); // Standard cost is 1 AP
 
     // Zombies without Lurching Gait move at half speed
@@ -190,16 +237,7 @@ class MovementService {
       }
     }
 
-    // Check if character has enough AP
-    if (character.actions.availableActions < apCost) {
-      return {
-        valid: false,
-        apCost,
-        reason: 'Not enough action points'
-      };
-    }
-
-    return { valid: true, apCost };
+    return apCost;
   }
 
   /**
@@ -220,34 +258,45 @@ class MovementService {
     // Get target cell
     const targetCell = await this.getCell(targetX, targetY, 'standard');
 
-    // Update character location
+    // Update character location coordinates
     character.location.x = targetX;
     character.location.y = targetY;
 
-    // Update building reference if applicable
-    if (targetCell.type === 'building' && targetCell.building) {
+    // Handle different movement types
+    if (validationResult.movementType === 'freeRunning') {
+      // Free Running between buildings - character stays inside
       character.location.buildingId = targetCell.building;
-      character.location.isInside = false;
+      character.location.isInside = true;
+
+      // Update area name for inside building
+      if (targetCell.suburb && validationResult.targetBuilding) {
+        character.location.areaName = `${targetCell.suburb.name} - ${validationResult.targetBuilding.name} (Inside)`;
+      }
     } else {
-      character.location.buildingId = null;
-      character.location.isInside = false;
-    }
-
-    // Update area name
-    if (targetCell.suburb) {
-      let areaName = targetCell.suburb.name;
-
-      // Add building name if at a building
+      // Normal movement - character is outside
       if (targetCell.type === 'building' && targetCell.building) {
-        const building = await Building.findById(targetCell.building);
-        if (building) {
-          areaName += ` - ${building.name} (Outside)`;
-        }
+        character.location.buildingId = targetCell.building;
+        character.location.isInside = false;
       } else {
-        areaName += ' - Street';
+        character.location.buildingId = null;
+        character.location.isInside = false;
       }
 
-      character.location.areaName = areaName;
+      // Update area name for outside
+      if (targetCell.suburb) {
+        let areaName = targetCell.suburb.name;
+
+        if (targetCell.type === 'building' && targetCell.building) {
+          const building = await Building.findById(targetCell.building);
+          if (building) {
+            areaName += ` - ${building.name} (Outside)`;
+          }
+        } else {
+          areaName += ' - Street';
+        }
+
+        character.location.areaName = areaName;
+      }
     }
 
     // Deduct AP
@@ -283,22 +332,25 @@ class MovementService {
     }
 
     // Check if the building can be entered
-    if (building.barricadeLevel > 0) {
-      // Barricade checks
+    // Free Running CANNOT bypass heavy barricades when entering from outside
+    if (building.barricadeLevel >= 60) { // Heavily barricaded or above
+      // Check if character has Free Running - but it doesn't help here!
+      const hasFreeRunning = character.skills.some(skill =>
+        skill.name === 'Free Running' && skill.active
+      );
+
+      if (character.type === 'zombie') {
+        throw new Error('Zombies cannot enter heavily barricaded buildings');
+      } else {
+        // Even survivors with Free Running cannot enter heavily barricaded buildings from outside
+        throw new Error('Building is too heavily barricaded to enter from outside');
+      }
+    } else if (building.barricadeLevel > 0) {
+      // Lightly to Very Strongly barricaded (levels 1-59)
       if (character.type === 'zombie') {
         throw new Error('Zombies cannot enter barricaded buildings');
       }
-
-      if (building.barricadeLevel >= 60) {
-        // "Heavily barricaded" or higher
-        const hasFreeFunning = character.skills.some(skill =>
-          skill.name === 'Free Running' && skill.active
-        );
-
-        if (!hasFreeFunning) {
-          throw new Error('Building is too heavily barricaded to enter without Free Running');
-        }
-      }
+      // Survivors can enter lightly barricaded buildings
     } else if (!building.doorsOpen) {
       // Closed doors checks
       if (character.type === 'zombie') {
@@ -346,11 +398,11 @@ class MovementService {
     if (building.barricadeLevel >= 80) {
       // Very heavily or extremely heavily barricaded
       if (character.type === 'survivor') {
-        const hasFreeFunning = character.skills.some(skill =>
+        const hasFreeRunning = character.skills.some(skill =>
           skill.name === 'Free Running' && skill.active
         );
 
-        if (!hasFreeFunning) {
+        if (!hasFreeRunning) {
           throw new Error('Building is too heavily barricaded to exit without Free Running');
         }
       }
@@ -388,21 +440,17 @@ class MovementService {
       return { valid: false, reason: 'Building not found' };
     }
 
-    // Check barricades
-    if (building.barricadeLevel > 0) {
+    // Updated barricade checks - Free Running cannot bypass heavy barricades from outside
+    if (building.barricadeLevel >= 60) { // Heavily barricaded or above
+      if (character.type === 'zombie') {
+        return { valid: false, reason: 'Zombies cannot enter heavily barricaded buildings' };
+      } else {
+        // Even survivors with Free Running cannot enter heavily barricaded buildings from outside
+        return { valid: false, reason: 'Building is too heavily barricaded to enter from outside' };
+      }
+    } else if (building.barricadeLevel > 0) {
       if (character.type === 'zombie') {
         return { valid: false, reason: 'Zombies cannot enter barricaded buildings' };
-      }
-
-      if (building.barricadeLevel >= 60) {
-        // "Heavily barricaded" or higher
-        const hasFreeFunning = character.skills.some(skill =>
-          skill.name === 'Free Running' && skill.active
-        );
-
-        if (!hasFreeFunning) {
-          return { valid: false, reason: 'Building is too heavily barricaded to enter without Free Running' };
-        }
       }
     } else if (!building.doorsOpen) {
       // Closed doors checks for zombies
@@ -438,11 +486,11 @@ class MovementService {
     // Check if very heavily or extremely heavily barricaded (levels 8-9)
     if (building.barricadeLevel >= 80) {
       if (character.type === 'survivor') {
-        const hasFreeFunning = character.skills.some(skill =>
+        const hasFreeRunning = character.skills.some(skill =>
           skill.name === 'Free Running' && skill.active
         );
 
-        if (!hasFreeFunning) {
+        if (!hasFreeRunning) {
           return { valid: false, reason: 'Building is too heavily barricaded to exit without Free Running' };
         }
       }

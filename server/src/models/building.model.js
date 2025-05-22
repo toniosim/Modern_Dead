@@ -117,17 +117,27 @@ buildingSchema.index({ 'location.suburb': 1 });
 // Index for building type queries
 buildingSchema.index({ type: 1 });
 
-// Virtual property for barricade status text
+// Virtual property for barricade status text with updated thresholds
 buildingSchema.virtual('barricadeStatus').get(function() {
   if (this.barricadeLevel === 0) return 'not barricaded';
-  if (this.barricadeLevel < 20) return 'loosely barricaded';
-  if (this.barricadeLevel < 40) return 'lightly barricaded';
-  if (this.barricadeLevel < 60) return 'quite strongly barricaded';
-  if (this.barricadeLevel < 80) return 'very strongly barricaded';
-  if (this.barricadeLevel < 100) return 'heavily barricaded';
-  if (this.barricadeLevel < 120) return 'very heavily barricaded';
-  return 'extremely heavily barricaded';
+  if (this.barricadeLevel < 10) return 'loosely barricaded';
+  if (this.barricadeLevel < 20) return 'lightly barricaded';
+  if (this.barricadeLevel < 40) return 'quite strongly barricaded';
+  if (this.barricadeLevel < 60) return 'very strongly barricaded';
+  if (this.barricadeLevel < 80) return 'heavily barricaded';      // Level 60-79: Heavily barricaded
+  if (this.barricadeLevel < 100) return 'very heavily barricaded'; // Level 80-99: Very heavily barricaded
+  return 'extremely heavily barricaded';                           // Level 100+: Extremely heavily barricaded
 });
+
+// Helper method to check if building is heavily barricaded or above
+buildingSchema.methods.isHeavilyBarricaded = function() {
+  return this.barricadeLevel >= 60;
+};
+
+// Helper method to check if building is very heavily barricaded or above
+buildingSchema.methods.isVeryHeavilyBarricaded = function() {
+  return this.barricadeLevel >= 80;
+};
 
 // Methods for barricade manipulation
 buildingSchema.methods.addBarricade = function(amount) {

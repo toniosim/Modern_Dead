@@ -179,14 +179,10 @@ const canEnterBuilding = computed(() => {
     return false;
   }
 
-  // Check heavy barricades for survivors without Free Running
-  if (building.barricadeLevel >= 60 && character.type === 'survivor') {
-    const hasFreeFunning = character.skills.some(
-      skill => skill.name === 'Free Running' && skill.active
-    );
-    if (!hasFreeFunning) {
-      return false;
-    }
+  // Check heavy barricades - Free Running CANNOT bypass from outside
+  if (building.barricadeLevel >= 60) {
+    // Heavily barricaded or above - NO ONE can enter from outside
+    return false;
   }
 
   // Check closed doors for zombies without Memories of Life

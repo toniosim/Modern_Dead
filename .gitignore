@@ -32,3 +32,4 @@ yarn-error.log*
 # local .env files
 .env.local*
 server/package-lock.json
+.vscode/launch.json
